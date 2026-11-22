@@ -94,14 +94,14 @@ test-web: ## Frontend tests
 
 lint: ## Lint backend + frontend
 	cd backend && uv run ruff check . && uv run ruff format --check .
-	cd frontend && pnpm lint
+	cd frontend && pnpm lint && pnpm format:check
 
 fmt: ## Auto-format backend + frontend
 	cd backend && uv run ruff check --fix . && uv run ruff format .
 	cd frontend && pnpm format
 
 typecheck: ## mypy + tsc
-	cd backend && uv run mypy app
+	cd backend && uv run mypy app tests
 	cd frontend && pnpm typecheck
 
 check: lint typecheck test ## Everything CI runs

@@ -49,13 +49,13 @@
 | Concern | Choice |
 |---|---|
 | Build / deps | **Vite**, **pnpm** |
-| UI | **React 18 + TypeScript (strict)** |
+| UI | **React 19 + TypeScript 7 (strict)** |
 | Components | **shadcn/ui** (Radix primitives) |
 | Styling | **Tailwind CSS**. shadcn is built on Tailwind; adding runtime CSS-in-JS (styled-components/emotion) would fight it. Use `cva` + `cn()` for variants. |
 | State | **Redux Toolkit slices** for client/UI state (session flow, timer, settings) |
 | Server state | **RTK Query**, with endpoints **generated from FastAPI's OpenAPI** (`@rtk-query/codegen-openapi`). No hand-written API types. |
 | Routing | React Router |
-| Quality | ESLint, Prettier, Vitest + Testing Library |
+| Quality | oxlint, Prettier (+ tailwind plugin), Vitest + Testing Library |
 
 ### Infra
 | Concern | Choice |
@@ -67,8 +67,8 @@
 | Backups | Nightly `pg_dump` to a mounted host dir (`make backup` / `make restore f=`), keep 14 days. |
 | Config | `.env` (gitignored) + `.env.example` |
 | Tasks | **Makefile** (`make help`) |
-| CI | GitHub Actions: `make check` (lint, typecheck, test) on PR |
-| Hooks | `pre-commit` (ruff, prettier, eslint) |
+| CI | GitHub Actions: backend (ruff, mypy, pytest vs Postgres, OpenAPI drift check), frontend (oxlint, prettier, tsc, vitest, build), prod-stack smoke test |
+| Hooks | `pre-commit` (ruff, prettier, oxlint) |
 
 ### Repo layout
 ```
@@ -409,7 +409,7 @@ class TutorOut(BaseModel):
 
 | Milestone | Scope |
 |---|---|
-| **M0: Infra** | Compose (db/api/web), Makefile, Alembic baseline, health check, OpenAPI → RTK Query codegen, CI. |
+| **M0: Infra** ✅ | Compose (db/api/web), Makefile, Alembic baseline, health check, OpenAPI → RTK Query codegen, CI. |
 | **M1: Engine** | Models, seeding, FSRS, sessions, static `flip` cards end-to-end. |
 | **M2: Generators** | Generator registry, `bucket` grading, Tier 1 decks, result/explain screen, tutor chain. |
 | **M3: Betting math** | Tier 2, Drill mode, stats. |
