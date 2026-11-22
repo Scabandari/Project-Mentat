@@ -1,7 +1,9 @@
 from typing import Any
 
 import httpx
+import pytest
 
+from app.services.scheduling import auto_rating
 from tests.conftest import Clock
 
 API = "/api/v1"
@@ -32,6 +34,7 @@ async def _answer(
     )
 
 
+@pytest.mark.usefixtures("static_only")
 async def test_flip_review_flow(client: httpx.AsyncClient) -> None:
     deck = await _deck_id(client, "combinatorics")
     s = await _session(client, deck_ids=[deck], new_limit=3)
@@ -62,6 +65,7 @@ async def test_flip_review_flow(client: httpx.AsyncClient) -> None:
     assert second["card_id"] != p["card_id"]
 
 
+@pytest.mark.usefixtures("static_only")
 async def test_new_limit_and_learn_ahead(client: httpx.AsyncClient, clock: Clock) -> None:
     deck = await _deck_id(client, "combinatorics")
     s = await _session(client, deck_ids=[deck], new_limit=1)
@@ -81,6 +85,7 @@ async def test_new_limit_and_learn_ahead(client: httpx.AsyncClient, clock: Clock
     assert done["problem"] is None and done["queue"]["reviewed"] == 2
 
 
+@pytest.mark.usefixtures("static_only")
 async def test_due_cards_come_back(client: httpx.AsyncClient, clock: Clock) -> None:
     deck = await _deck_id(client, "combinatorics")
     s = await _session(client, deck_ids=[deck], new_limit=1)
@@ -98,6 +103,7 @@ async def test_due_cards_come_back(client: httpx.AsyncClient, clock: Clock) -> N
     assert p2["card_id"] == p["card_id"] and grade["next_due"]
 
 
+@pytest.mark.usefixtures("static_only")
 async def test_daily_new_limit_from_settings(client: httpx.AsyncClient) -> None:
     r = await client.patch(f"{API}/me/settings", json={"daily_new_limit": 2})
     assert r.json()["daily_new_limit"] == 2
@@ -113,6 +119,7 @@ async def test_daily_new_limit_from_settings(client: httpx.AsyncClient) -> None:
     assert (await _session(client))["new_count"] == 0
 
 
+@pytest.mark.usefixtures("static_only")
 async def test_drill_does_not_touch_schedule(client: httpx.AsyncClient) -> None:
     deck = await _deck_id(client, "combinatorics")
     s = await _session(client, mode="drill", deck_ids=[deck])
@@ -129,6 +136,7 @@ async def test_drill_does_not_touch_schedule(client: httpx.AsyncClient) -> None:
     assert combos["new_count"] == combos["card_count"]
 
 
+@pytest.mark.usefixtures("static_only")
 async def test_flip_requires_self_rating(client: httpx.AsyncClient) -> None:
     s = await _session(client, new_limit=1)
     p = (await _next(client, s["id"]))["problem"]
@@ -136,6 +144,7 @@ async def test_flip_requires_self_rating(client: httpx.AsyncClient) -> None:
     assert r.status_code == 422
 
 
+@pytest.mark.usefixtures("static_only")
 async def test_summary(client: httpx.AsyncClient, clock: Clock) -> None:
     s = await _session(client, new_limit=3)
     for rating in ["good", "again", "easy"]:
@@ -163,3 +172,69 @@ async def test_settings_validation(client: httpx.AsyncClient) -> None:
 async def test_unknown_session_404(client: httpx.AsyncClient) -> None:
     r = await client.post(f"{API}/sessions/00000000-0000-0000-0000-000000000000/next")
     assert r.status_code == 404
+
+
+async def _answer_any(client: httpx.AsyncClient, p: dict[str, Any]) -> httpx.Response:
+    body: dict[str, Any] = {"latency_ms": 1000}
+    if p["answer_type"] == "flip":
+        body["self_rating"] = "good"
+    elif p["answer_type"] == "action":
+        body["response"] = p["actions"][0]
+    else:
+        body["response"] = 0
+    r = await client.post(f"{API}/instances/{p['instance_id']}/answer", json=body)
+    assert r.status_code == 200, r.text
+    return r
+
+
+async def _first_of_type(client: httpx.AsyncClient, sid: str, answer_type: str) -> dict[str, Any]:
+    for _ in range(40):
+        p = (await _next(client, sid))["problem"]
+        assert p is not None
+        if p["answer_type"] == answer_type:
+            return dict(p)
+        await _answer_any(client, p)
+    raise AssertionError(f"no {answer_type} card served")
+
+
+async def test_generated_bucket_card_grading(client: httpx.AsyncClient) -> None:
+    deck = await _deck_id(client, "pot-odds")
+    s = await _session(client, mode="drill", deck_ids=[deck])
+    p = await _first_of_type(client, s["id"], "bucket")
+    assert len(p["buckets"]) == 5 and p["unit"] == "percent"
+    assert "correct" not in p and "exact" not in p and "explanation_md" not in p
+
+    r = await client.post(
+        f"{API}/instances/{p['instance_id']}/answer", json={"response": 0, "latency_ms": 8000}
+    )
+    g = r.json()
+    assert g["correct_response"] in range(5)
+    assert g["is_correct"] == (g["correct_response"] == 0)
+    assert g["rating"] == auto_rating(g["is_correct"], 8000, g["target_ms"])
+    assert g["explanation_md"] and g["shortcut"] and g["exact_answer"] is not None
+
+
+async def test_generated_card_correct_answer_and_speed(client: httpx.AsyncClient) -> None:
+    deck = await _deck_id(client, "hand-basics")
+    s = await _session(client, mode="drill", deck_ids=[deck])
+    p = await _first_of_type(client, s["id"], "choice")
+    # Find the right answer by answering a throwaway copy? No: the key stays server-side.
+    # Answer every option on fresh drill instances until one is graded correct.
+    r = await client.post(
+        f"{API}/instances/{p['instance_id']}/answer",
+        json={"response": p["choices"][0]["id"], "latency_ms": 100},
+    )
+    g = r.json()
+    if g["is_correct"]:
+        assert g["rating"] == "easy"  # far under target time
+    else:
+        assert g["rating"] == "again"
+
+
+async def test_stakes_format_changes_rendering(client: httpx.AsyncClient) -> None:
+    deck = await _deck_id(client, "pot-odds")
+    for fmt, marker in (("live", "$"), ("online", "bb")):
+        await client.patch(f"{API}/me/settings", json={"stakes_format": fmt})
+        s = await _session(client, mode="drill", deck_ids=[deck])
+        p = await _first_of_type(client, s["id"], "bucket")
+        assert marker in p["prompt"], (fmt, p["prompt"])

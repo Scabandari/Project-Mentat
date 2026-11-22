@@ -12,6 +12,35 @@ decks:
     section: 0
     name: Hand Basics
     description: Hand rankings, kickers, reading the board, the nuts.
+    lesson_md: |
+      ## How a hand is made
+      You get **2 hole cards**; the board shows up to **5 community cards**. Your hand is the **best 5 cards out of those 7**. You can use both hole cards, one, or none ("playing the board").
+
+      ## Hand rankings, best to worst
+      | # | Hand | Example |
+      |---|---|---|
+      | 1 | Straight flush | 9♠ 8♠ 7♠ 6♠ 5♠ |
+      | 2 | Four of a kind | Q Q Q Q 4 |
+      | 3 | Full house | J J J 3 3 |
+      | 4 | Flush | A♦ J♦ 8♦ 5♦ 2♦ |
+      | 5 | Straight | T 9 8 7 6 |
+      | 6 | Three of a kind | 7 7 7 K 2 |
+      | 7 | Two pair | A A 9 9 4 |
+      | 8 | One pair | K K Q 8 3 |
+      | 9 | High card | A J 8 6 2 |
+
+      A royal flush is just the highest straight flush. The ace plays high or low: **A-2-3-4-5** (the wheel) is the lowest straight.
+
+      ## Kickers
+      When two players have the same pair, the next-highest cards in their best five (the **kickers**) decide. If the best fives are identical, the pot is **split**.
+
+      ## Reading the board
+      - **Flush possible?** Three cards of one suit on the board.
+      - **Straight possible?** Three board cards within any five-rank window.
+      - **Full house possible?** The board is paired.
+      - **The nuts** is the best possible hand on this board. Check from the top: straight flush, quads, full house, flush, straight.
+
+      **Shortcut:** before judging your hand, ask what the board makes possible.
     cards:
       - {slug: rankings-order, kind: generator, answer_type: choice, generator_key: rankings_order, target_ms: 5000}
       - {slug: winner-showdown, kind: generator, answer_type: choice, generator_key: winner_showdown, target_ms: 12000}
@@ -65,6 +94,34 @@ decks:
     section: 1
     name: Number Fluency
     description: Ratios, percentages and the bet-size table.
+    lesson_md: |
+      ## Why this section matters
+      Almost every decision at the table comes down to comparing two numbers. Most of those numbers depend only on **bet size as a fraction of the pot**, so you can memorise them once.
+
+      ## Odds ↔ percentages
+      Odds of **a : 1 against** means you win 1 time for every *a* losses:
+
+      **win % = 1 / (a + 1)**. So 3:1 → 1/4 = **25%**, 4:1 → **20%**, 2:1 → **33%**.
+
+      ## The three numbers for every bet size
+      Villain bets **B** into a pot of **P**:
+      - **Call equity**: B / (P + 2B). Your call divided by the final pot.
+      - **Bluff breakeven**: B / (P + B). How often a pure bluff of size B must work.
+      - **MDF** (minimum defense frequency): P / (P + B). How often you must continue so villain can't profit by bluffing any two cards.
+
+      ## Memorise this table
+      | Bet | Call needs | Bluff must work | MDF |
+      |---|---|---|---|
+      | ⅓ pot | 20% | 25% | 75% |
+      | ½ pot | 25% | 33% | 67% |
+      | ⅔ pot | 29% | 40% | 60% |
+      | ¾ pot | 30% | 43% | 57% |
+      | Pot | 33% | 50% | 50% |
+      | 2× pot | 40% | 67% | 33% |
+
+      **Worked example:** $50 into $100 is ½ pot → you need **25%** equity to call.
+
+      **Live tip:** first turn the dollars into a fraction ($65 into $100 ≈ ⅔), then read the table.
     cards:
       - {slug: ratio-to-pct, kind: generator, answer_type: bucket, generator_key: ratio_to_pct, target_ms: 5000}
       - {slug: pct-to-ratio, kind: generator, answer_type: choice, generator_key: pct_to_ratio, target_ms: 5000}
@@ -111,6 +168,28 @@ decks:
     section: 2
     name: Combinatorics
     description: Counting hand combinations and card removal.
+    lesson_md: |
+      ## Combos
+      There are **1,326** two-card starting hands, but only **169** strategically different ones.
+
+      | Hand type | Combos | Why |
+      |---|---|---|
+      | Pocket pair (QQ) | 6 | C(4,2): choose 2 of 4 queens |
+      | Suited (AKs) | 4 | one per suit |
+      | Offsuit (AKo) | 12 | 4 × 4 − 4 suited |
+      | Any suits (AK) | 16 | 4 × 4 |
+
+      ## Card removal
+      Every card you can see (board and your hand) is one villain can't have.
+      - One ace on board: AA goes from 6 → **3** combos (C(3,2)), AK from 16 → **12** (3 × 4).
+      - **Sets** of an unpaired board card: **3** combos each. **Two pair** using both hole cards: **3 × 3 = 9** per pair of board ranks.
+
+      ## Blockers
+      If you hold a card villain needs, you **block** those combos. Holding the A♠ on a three-spade board means villain can never have the nut flush.
+
+      **Worked example:** Board K♠ 7♦ 2♣. Villain's range {AA, KK}: AA 6 + KK 3 = **9 combos**.
+
+      **Shortcut:** pairs → C(cards left, 2). Unpaired → cards left of rank 1 × cards left of rank 2.
     cards:
       - {slug: combos-card-removal, kind: generator, answer_type: bucket, generator_key: combos_card_removal, target_ms: 12000}
       - {slug: combos-pairs-on-board, kind: generator, answer_type: bucket, generator_key: combos_pairs_on_board, target_ms: 15000}
@@ -133,6 +212,29 @@ decks:
     section: 3
     name: Outs & Draws
     description: Counting outs and converting them to equity.
+    lesson_md: |
+      ## Outs
+      An **out** is an unseen card that should give you the best hand. Count only the cards you can't see: **47** on the flop, **46** on the turn.
+
+      | Draw | Outs |
+      |---|---|
+      | Flush draw | 9 |
+      | Open-ended straight draw | 8 |
+      | Gutshot | 4 |
+      | Two overcards | 6 (often dirty) |
+      | Flush draw + open-ender | 15 |
+      | Flush draw + gutshot | 12 |
+
+      Combo draws are **not** simply added: the straight cards of your suit are already counted in the flush.
+
+      ## Dirty outs
+      An out is **dirty** if it also improves villain to a better hand. Against a set, any flush card that pairs the board gives villain a full house. Don't count it.
+
+      ## Rule of 2 and 4
+      - **Flop, all-in (two cards to come):** equity ≈ outs × 4. Over 8 outs, subtract (outs − 8): 15 outs → 60 − 7 = **53%** (exact 54%).
+      - **One card to come:** equity ≈ outs × 2. On the turn, or on the flop when villain can still bet the turn.
+
+      **Worked example:** Flush draw on the flop, all-in: 9 × 4 = 36% (exact 35%). Facing a turn bet: 9 × 2 = 18% (exact 19.6%).
     cards:
       - {slug: outs-count, kind: generator, answer_type: bucket, generator_key: outs_count, target_ms: 15000}
       - {slug: outs-combo, kind: generator, answer_type: bucket, generator_key: outs_combo, target_ms: 20000}
@@ -165,6 +267,28 @@ decks:
     section: 4
     name: Pot Odds
     description: Equity needed vs. equity you have.
+    lesson_md: |
+      ## The question
+      Is the equity you **have** bigger than the equity you **need**?
+
+      ## Equity you need
+      **call ÷ final pot**, where the final pot is pot + villain's bet + your call.
+
+      Pot $100, villain bets $50: you call $50 to win $200 → **25%**.
+
+      For standard sizes, read it off the table: ½ pot = 25%, pot = 33%.
+
+      ## Equity you have
+      Count outs, then:
+      - one card to come (villain can bet again): outs × 2
+      - two cards, all-in: outs × 4
+
+      ## Decide
+      Call if have ≥ need. If it's close, implied odds (money you win later when you hit) can justify a call; that's section 7.
+
+      **Worked example:** Flop flush draw, villain bets ½ pot. Need 25%, have ≈ 9 × 2 = 18–19%. Direct odds say **fold** unless implied odds make up the gap.
+
+      **Multiway:** every caller ahead of you adds money to the pot, so your price gets better: bet B into P with one caller needs B / (P + 3B).
     cards:
       - {slug: pot-odds-required, kind: generator, answer_type: bucket, generator_key: pot_odds_required, target_ms: 10000}
       - {slug: pot-odds-vs-draw, kind: generator, answer_type: choice, generator_key: pot_odds_vs_draw, target_ms: 15000}

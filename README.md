@@ -36,6 +36,8 @@ make check                    # lint + typecheck + tests (stack must be up for a
 make psql                     # DB shell
 ```
 
+**Tutor (optional):** set `ANTHROPIC_API_KEY` in `.env` to enable "Explain differently" on results (model: `TUTOR_MODEL`, default `claude-haiku-5-5`). Without a key the button is hidden.
+
 **API contract workflow:** change Pydantic schemas or routes → `make gen-api` → commit
 `frontend/openapi.json` and `frontend/src/api/generated.ts`. CI fails if they drift.
 

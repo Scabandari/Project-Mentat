@@ -1,5 +1,5 @@
 import { baseApi as api } from './baseApi'
-export const addTagTypes = ['health', 'me', 'catalog', 'study'] as const
+export const addTagTypes = ['health', 'me', 'catalog', 'study', 'meta'] as const
 const injectedRtkApi = api
   .enhanceEndpoints({
     addTagTypes,
@@ -64,6 +64,18 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ['study'],
       }),
+      tutorExplain: build.mutation<TutorExplainApiResponse, TutorExplainApiArg>({
+        query: (queryArg) => ({
+          url: `/api/v1/instances/${queryArg.instanceId}/tutor`,
+          method: 'POST',
+          body: queryArg.tutorIn,
+        }),
+        invalidatesTags: ['study'],
+      }),
+      getConfig: build.query<GetConfigApiResponse, GetConfigApiArg>({
+        query: () => ({ url: `/api/v1/config` }),
+        providesTags: ['study', 'meta'],
+      }),
     }),
     overrideExisting: false,
   })
@@ -103,6 +115,13 @@ export type AnswerProblemApiArg = {
   instanceId: string
   answerIn: AnswerIn
 }
+export type TutorExplainApiResponse = /** status 200 Successful Response */ TutorOut
+export type TutorExplainApiArg = {
+  instanceId: string
+  tutorIn: TutorIn
+}
+export type GetConfigApiResponse = /** status 200 Successful Response */ ConfigOut
+export type GetConfigApiArg = void
 export type HealthOut = {
   status: 'ok' | 'degraded'
   db: 'ok' | 'down'
@@ -201,12 +220,14 @@ export type SessionIn = {
 }
 export type Scene = {
   hero?: string[]
+  villain?: string[]
   board?: string[]
   pot?: number | null
   bet?: number | null
   hero_stack?: number | null
   villain_stack?: number | null
   street?: ('preflop' | 'flop' | 'turn' | 'river') | null
+  money_format?: ('live' | 'online') | null
 }
 export type ActionProblem = {
   instance_id: string
@@ -322,6 +343,15 @@ export type AnswerIn = {
   self_rating?: ('again' | 'hard' | 'good' | 'easy') | null
   latency_ms: number
 }
+export type TutorOut = {
+  message_md: string
+}
+export type TutorIn = {
+  question?: string | null
+}
+export type ConfigOut = {
+  tutor_enabled: boolean
+}
 export const {
   useGetHealthQuery,
   useGetSettingsQuery,
@@ -333,4 +363,6 @@ export const {
   useNextProblemMutation,
   useEndSessionMutation,
   useAnswerProblemMutation,
+  useTutorExplainMutation,
+  useGetConfigQuery,
 } = injectedRtkApi

@@ -12,9 +12,11 @@ from pydantic import TypeAdapter
 from sqlalchemy import Select, and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.generators.base import GenContext, generate
 from app.models import (
     AnswerType,
     Card,
+    CardKind,
     CardState,
     Deck,
     ProblemInstance,
@@ -218,6 +220,36 @@ def _render_static(card: Card) -> tuple[dict[str, Any], dict[str, Any]]:
     return {"prompt": card.front_md or ""}, {"back_md": card.back_md or ""}
 
 
+def level_for(state: UserCardState | None) -> int:
+    """Difficulty ramp: L1 until FSRS expects ~3 days' retention, L3 from ~3 weeks."""
+    if state is None or state.stability is None or state.state is not CardState.review:
+        return 1
+    return 1 if state.stability < 3 else 2 if state.stability < 21 else 3
+
+
+def _render_generator(
+    card: Card, seed: int, ctx: GenContext
+) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]] | None]:
+    inst = generate(card.generator_key or "", seed, card.params, ctx)
+    scene = dict(inst.scene) if inst.scene else None
+    if scene and scene.get("pot") is not None:
+        scene["money_format"] = ctx.stakes_format
+    prompt: dict[str, Any] = {"prompt": inst.prompt, "scene": scene}
+    if inst.unit:
+        prompt["unit"] = inst.unit
+    if inst.actions:
+        prompt["actions"] = inst.actions
+    key = {
+        "response": inst.correct,
+        "exact": inst.exact,
+        "shortcut": inst.shortcut,
+        "explanation_md": inst.explanation_md,
+        "level": ctx.level,
+        "stakes_format": ctx.stakes_format,
+    }
+    return prompt, key, inst.buckets or inst.choices
+
+
 def _problem_out(inst: ProblemInstance, card: Card, deck_slug: str) -> Any:
     payload: dict[str, Any] = {
         "answer_type": card.answer_type.value,
@@ -252,19 +284,25 @@ async def next_problem(
         if picked is None:
             return NextOut(problem=None, queue=await _queue_counts(session, user_id, now, s))
         card, is_new = picked
-        if card.kind.value != "static":
-            raise HTTPException(501, f"Generator '{card.generator_key}' not implemented")
-        prompt, key = _render_static(card)
+        seed = random.getrandbits(62)
+        choices: list[dict[str, Any]] | None = None
+        if card.kind is CardKind.static:
+            prompt, key = _render_static(card)
+        else:
+            state = await session.get(UserCardState, (user_id, card.id))
+            settings = await get_settings(session, user_id)
+            ctx = GenContext(stakes_format=settings.stakes_format, level=level_for(state))
+            prompt, key, choices = _render_generator(card, seed, ctx)
         pending = ProblemInstance(
             created_at=now,
             user_id=user_id,
             card_id=card.id,
             session_id=s.id,
-            seed=random.getrandbits(62),
+            seed=seed,
             is_new=is_new,
             prompt=prompt,
             answer_key=key,
-            choices=None,
+            choices=choices,
         )
         session.add(pending)
         await session.commit()

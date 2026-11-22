@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+import app.generators  # noqa: F401  (registers generators)
 from app.generators.registry import is_registered
 from app.models import AnswerType, Card, CardKind, Deck, Pack
 

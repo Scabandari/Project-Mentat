@@ -85,6 +85,33 @@ async def clean_user_data() -> AsyncIterator[None]:
     yield
 
 
+@pytest.fixture
+async def static_only() -> AsyncIterator[None]:
+    """Deactivate generated cards so flip-card scheduling tests control every rating."""
+    from sqlalchemy import text
+
+    from app.core.db import SessionLocal
+
+    async with SessionLocal() as session:
+        await session.execute(text("UPDATE cards SET is_active = false WHERE kind = 'generator'"))
+        await session.commit()
+    yield
+    async with SessionLocal() as session:
+        await session.execute(
+            text(
+                "UPDATE cards SET is_active = true WHERE kind = 'generator' AND generator_key = ANY(:k)"
+            ),
+            {"k": list(_registered())},
+        )
+        await session.commit()
+
+
+def _registered() -> list[str]:
+    from app.generators.registry import REGISTRY
+
+    return list(REGISTRY)
+
+
 @dataclass
 class Clock:
     now: datetime = field(default_factory=lambda: datetime(2026, 11, 21, 15, 0, tzinfo=UTC))

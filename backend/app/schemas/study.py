@@ -78,12 +78,14 @@ class SessionOut(BaseModel):
 # ---------- Problems (discriminated on answer_type) ----------
 class Scene(BaseModel):
     hero: list[str] = []
+    villain: list[str] = []
     board: list[str] = []
     pot: float | None = None
     bet: float | None = None
     hero_stack: float | None = None
     villain_stack: float | None = None
     street: Literal["preflop", "flop", "turn", "river"] | None = None
+    money_format: StakesFormat | None = None  # how to label pot/bet: $ (live) or bb (online)
 
 
 class ProblemBase(BaseModel):
@@ -186,3 +188,16 @@ class SessionSummaryOut(BaseModel):
     median_latency_ms: int
     duration_s: int
     by_deck: list[DeckStat]
+
+
+# ---------- Tutor / config ----------
+class TutorIn(BaseModel):
+    question: str | None = Field(default=None, max_length=500)
+
+
+class TutorOut(BaseModel):
+    message_md: str
+
+
+class ConfigOut(BaseModel):
+    tutor_enabled: bool

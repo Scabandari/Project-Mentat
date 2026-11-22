@@ -1,5 +1,5 @@
 import { Dumbbell, Play } from 'lucide-react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 
 import {
   type DeckOut,
@@ -126,18 +126,25 @@ function DeckRow({
   const studyable = deck.due_count > 0 || (newAllowed && deck.new_count > 0)
   return (
     <div
-      className={cn('bg-card flex items-center gap-3 rounded-xl border p-3', empty && 'opacity-50')}
+      className={cn(
+        'bg-card relative flex items-center gap-3 rounded-xl border p-3 [&_button]:relative [&_button]:z-10',
+        empty && 'opacity-50',
+      )}
     >
       <div className="bg-secondary flex size-9 shrink-0 items-center justify-center rounded-lg text-sm font-semibold tabular-nums">
         {deck.section}
       </div>
       <div className="min-w-0 flex-1">
-        <span
-          className={cn('block truncate font-medium', deck.locked && 'text-muted-foreground')}
+        <Link
+          to={`/decks/${deck.id}`}
+          className={cn(
+            'block truncate font-medium after:absolute after:inset-0',
+            deck.locked && 'text-muted-foreground',
+          )}
           title={deck.locked ? 'Recommended after the previous section' : undefined}
         >
           {deck.name}
-        </span>
+        </Link>
         <div className="mt-1.5 flex items-center gap-2">
           <Progress
             value={deck.mastery * 100}

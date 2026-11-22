@@ -2,9 +2,11 @@ import { makeStore } from '@/app/store'
 
 import {
   answerRevealed,
+  answerSelected,
   gradingStarted,
   problemShown,
   queueEmptied,
+  selectAnswerLatency,
   selectFlipLatency,
   sessionStarted,
 } from './studySlice'
@@ -41,5 +43,14 @@ describe('studySlice', () => {
     store.dispatch(problemShown({ instanceId: 'i1', at: 0 }))
     store.dispatch(queueEmptied())
     expect(store.getState().study).toMatchObject({ phase: 'done', instanceId: null })
+  })
+
+  it('records the picked option and its latency once', () => {
+    const store = makeStore()
+    store.dispatch(problemShown({ instanceId: 'i1', at: 500 }))
+    store.dispatch(answerSelected({ response: 3, at: 2_500 }))
+    store.dispatch(answerSelected({ response: 1, at: 9_000 }))
+    expect(store.getState().study.selected).toBe(3)
+    expect(selectAnswerLatency(store.getState())).toBe(2_000)
   })
 })

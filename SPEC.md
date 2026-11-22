@@ -136,7 +136,7 @@ class PotOddsRequiredEquity(Generator):
 | `action` | Fold / Call / Raise | Against EV-maximising action |
 | `flip` | Reveal → self-rate | User picks Again/Hard/Good/Easy |
 
-**Bucket construction:** width set per card (e.g. 5 pts for equity, 1 for outs), boundaries on round numbers, half-open `[lo, hi)`. The correct bucket's position is randomised across slots 0–4 so position is never a tell; clamp at domain edges (0%/100%).
+**Bucket construction:** counts use exact values (width 1). Percentages use even widths by level (L1 10 pts, L2 6, L3 4); the correct bucket is centred on the exact answer, so the tolerance is ±width/2. The correct slot is drawn uniformly from the slots that keep all five buckets inside 0–100%; near an edge (e.g. a 20% answer at L1) only some slots are feasible, which is unavoidable with contiguous buckets and shrinks as the level rises.
 
 **Rating (auto-graded types):**
 | Result | Rating |
@@ -231,7 +231,8 @@ Conventions: plain resources (no success envelope); errors are `{"error": {"code
 | GET | `/stats/overview` | `StatsOverviewOut` |
 | GET | `/stats/decks/{id}` | `DeckStatsOut` |
 | GET | `/reviews?cursor=` | `Page[ReviewOut]` |
-| POST | `/instances/{id}/tutor` | `TutorOut` (LLM, M2) |
+| POST | `/instances/{id}/tutor` | `TutorOut`. Body `{question?}`. 409 until the problem is answered (never leaks the key); 503 if no API key. |
+| GET | `/config` | `{tutor_enabled}` |
 
 `next` is a POST because it creates an instance. It returns a wrapper (not `204`) so the client always gets queue counts for the progress bar.
 
@@ -404,7 +405,7 @@ Full card-by-card curriculum in **[CURRICULUM.md](CURRICULUM.md)**: 11 sections 
 |---|---|
 | **M0: Infra** ✅ | Compose (db/api/web), Makefile, Alembic baseline, health check, OpenAPI → RTK Query codegen, CI. |
 | **M1: Engine** ✅ | Models, seeding, FSRS, sessions, static `flip` cards end-to-end. |
-| **M2: Generators** | Generator registry, `bucket` grading, live/online rendering, sections 0–4, lessons, result/explain screen, tutor chain. |
+| **M2: Generators** ✅ | Generator registry, `bucket` grading, live/online rendering, sections 0–4, lessons, result/explain screen, tutor chain. |
 | **M3: Betting math** | Sections 5–9, capstone, Drill mode, stats. |
 | **M4: Generic learning** | LLM deck builder, CSV import, user-created decks. |
 | **v2** | Auth → subdomain via Cloudflare Tunnel, PWA/offline, section 10, `preflop-ranges` pack. |

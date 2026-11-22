@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://mentat:mentat@localhost:5432/mentat"
     cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
     anthropic_api_key: str | None = None
+    tutor_model: str = "claude-haiku-5-5"
 
     @field_validator("cors_origins", mode="before")
     @classmethod

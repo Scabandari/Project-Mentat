@@ -455,6 +455,121 @@
           }
         }
       }
+    },
+    "/api/v1/instances/{instance_id}/tutor": {
+      "post": {
+        "tags": [
+          "study"
+        ],
+        "summary": "Tutor",
+        "operationId": "tutorExplain",
+        "parameters": [
+          {
+            "name": "instance_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Instance Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TutorIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TutorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/config": {
+      "get": {
+        "tags": [
+          "study",
+          "meta"
+        ],
+        "summary": "Config",
+        "operationId": "getConfig",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigOut"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -765,6 +880,19 @@
           "choices"
         ],
         "title": "ChoiceProblem"
+      },
+      "ConfigOut": {
+        "properties": {
+          "tutor_enabled": {
+            "type": "boolean",
+            "title": "Tutor Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tutor_enabled"
+        ],
+        "title": "ConfigOut"
       },
       "DeckDetailOut": {
         "properties": {
@@ -1386,6 +1514,14 @@
             "title": "Hero",
             "default": []
           },
+          "villain": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Villain",
+            "default": []
+          },
           "board": {
             "items": {
               "type": "string"
@@ -1454,6 +1590,21 @@
               }
             ],
             "title": "Street"
+          },
+          "money_format": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "live",
+                  "online"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Money Format"
           }
         },
         "type": "object",
@@ -1694,6 +1845,37 @@
         },
         "type": "object",
         "title": "SettingsOut"
+      },
+      "TutorIn": {
+        "properties": {
+          "question": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question"
+          }
+        },
+        "type": "object",
+        "title": "TutorIn"
+      },
+      "TutorOut": {
+        "properties": {
+          "message_md": {
+            "type": "string",
+            "title": "Message Md"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_md"
+        ],
+        "title": "TutorOut"
       },
       "ValidationError": {
         "properties": {

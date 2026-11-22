@@ -13,10 +13,13 @@ import {
 import { useAppDispatch, useAppSelector } from '@/app/hooks'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
+import type { Response } from '@/features/study/AnswerInputs'
 import { FlipCard, type SelfRating } from '@/features/study/FlipCard'
+import { GeneratedCard } from '@/features/study/GeneratedCard'
 import { SessionSummary } from '@/features/study/SessionSummary'
 import {
   answerRevealed,
+  answerSelected,
   gradeReceived,
   gradingStarted,
   nextRequested,
@@ -82,6 +85,22 @@ export function StudyPage() {
     await loadNext()
   }
 
+  async function choose(response: Response) {
+    const problem = current?.problem
+    if (!problem || study.phase !== 'question' || study.shownAt === null) return
+    const at = performance.now()
+    dispatch(answerSelected({ response, at }))
+    try {
+      const grade = await answerProblem({
+        instanceId: problem.instance_id,
+        answerIn: { response, latency_ms: Math.round(at - study.shownAt) },
+      }).unwrap()
+      dispatch(gradeReceived(grade))
+    } catch {
+      setError('Couldn’t submit your answer.')
+    }
+  }
+
   async function quit() {
     if (summary) return navigate('/')
     await finish()
@@ -109,13 +128,14 @@ export function StudyPage() {
   const q = current?.queue
   const remaining = q ? q.due + q.new : 0
   const total = q ? q.reviewed + remaining : 0
+  const drill = Boolean(q && current?.problem && remaining === 0 && total === q.reviewed)
   const problem = current?.problem
 
   return (
     <Shell
       onClose={() => void quit()}
-      progress={total ? (q!.reviewed / total) * 100 : 0}
-      counter={q ? `${q.reviewed} / ${total}` : undefined}
+      progress={drill ? undefined : total ? (q!.reviewed / total) * 100 : 0}
+      counter={q ? (drill ? `${q.reviewed} done` : `${q.reviewed} / ${total}`) : undefined}
     >
       {problem?.answer_type === 'flip' ? (
         <FlipCard
@@ -128,7 +148,16 @@ export function StudyPage() {
           onRate={(r) => void rate(r)}
         />
       ) : problem ? (
-        <p className="text-muted-foreground">This card type arrives in M2.</p>
+        <GeneratedCard
+          key={problem.instance_id}
+          problem={problem}
+          selected={study.selected}
+          grade={study.lastGrade}
+          busy={study.phase === 'loading' || study.phase === 'grading'}
+          showTimer={settings?.show_timer ?? true}
+          onAnswer={(r) => void choose(r)}
+          onContinue={() => void loadNext()}
+        />
       ) : (
         <p className="text-muted-foreground">Loading…</p>
       )}
@@ -153,7 +182,11 @@ function Shell({
         <Button size="icon" variant="ghost" aria-label="End session" onClick={onClose}>
           <X />
         </Button>
-        {progress !== undefined && <Progress value={progress} className="flex-1" />}
+        {progress !== undefined ? (
+          <Progress value={progress} className="flex-1" />
+        ) : (
+          <div className="flex-1" />
+        )}
         {counter && <span className="text-muted-foreground text-xs tabular-nums">{counter}</span>}
       </div>
       <div className="flex flex-1 flex-col">{children}</div>
