@@ -5,6 +5,7 @@ import { type SessionIn, useCreateSessionMutation, useGetDeckQuery, useGetPackQu
 import { Markdown } from '@/components/Markdown'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
+import { CardStats } from '@/features/stats/CardStats'
 
 export function DeckPage() {
   const { deckId = '' } = useParams()
@@ -60,6 +61,8 @@ export function DeckPage() {
       ) : (
         <p className="text-muted-foreground text-sm">Lesson coming soon.</p>
       )}
+
+      <CardStats deckId={deckId} />
 
       <div className="bg-background/95 fixed inset-x-0 bottom-0 border-t p-4 backdrop-blur">
         <div className="mx-auto grid max-w-md grid-cols-3 gap-2">

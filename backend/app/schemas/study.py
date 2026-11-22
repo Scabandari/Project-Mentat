@@ -201,3 +201,53 @@ class TutorOut(BaseModel):
 
 class ConfigOut(BaseModel):
     tutor_enabled: bool
+
+
+# ---------- Stats ----------
+class DayStat(BaseModel):
+    date: str  # YYYY-MM-DD in the user's timezone
+    reviews: int
+    correct: int
+
+
+class DeckStatRow(BaseModel):
+    deck_id: UUID
+    deck_name: str
+    section: int
+    reviews: int
+    accuracy: float
+    median_latency_ms: int
+    on_time: float  # share of reviews answered within the card's target time
+    mastery: float
+
+
+class StatsOverviewOut(BaseModel):
+    streak_days: int
+    reviews_today: int
+    due_now: int
+    reviews_7d: int
+    accuracy_7d: float | None
+    median_latency_ms_7d: int | None
+    daily: list[DayStat]  # last 14 days, oldest first
+    decks: list[DeckStatRow]  # decks with reviews in the last 30 days
+    weakest: list[DeckStatRow]  # up to 3, worst first (min 5 reviews)
+
+
+class CardStatRow(BaseModel):
+    card_id: UUID
+    slug: str
+    label: str
+    answer_type: str
+    reviews: int
+    accuracy: float | None
+    median_latency_ms: int | None
+    target_ms: int
+    state: str  # new | learning | review | relearning
+    due: datetime | None
+    stability_days: float | None
+
+
+class DeckStatsOut(BaseModel):
+    deck_id: UUID
+    deck_name: str
+    cards: list[CardStatRow]

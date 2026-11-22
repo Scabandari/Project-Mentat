@@ -25,7 +25,7 @@ def required_equity(spot: Spot, extra_callers: int = 0) -> float:
 def _setup(spot: Spot) -> str:
     if spot.fmt == "live":
         return f"{spot.stake_label} live. Pot is **{spot.money(spot.pot)}**. "
-    return f"Online, 100bb deep. Pot is **{spot.money(spot.pot)}**. "
+    return f"Online. Pot is **{spot.money(spot.pot)}**. "
 
 
 def _scene(spot: Spot, **cards: Any) -> dict[str, Any]:

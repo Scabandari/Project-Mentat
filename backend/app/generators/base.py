@@ -4,6 +4,7 @@ A generator is a pure function of (rng, params, ctx) → Instance. Same seed + p
 gives the same instance, so any bug report is reproducible from the stored seed.
 """
 
+import math
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from random import Random
@@ -88,6 +89,8 @@ def make_buckets(
     unit: Unit,
     lo_bound: float | None = None,
     hi_bound: float | None = None,
+    label_fn: Callable[[int, int], str] | None = None,
+    aligned: bool = False,
 ) -> tuple[list[dict[str, Any]], int]:
     """Five contiguous, equal-width buckets.
 
@@ -96,11 +99,16 @@ def make_buckets(
     tolerance is ±width/2 and boundaries stay integers. The correct bucket lands in a random
     slot so position is never a tell; the set is then shifted to respect domain bounds and
     the correct id recomputed by containment.
+    aligned=True puts boundaries on multiples of width instead (for money amounts).
     """
     c = round(exact)
 
     def first_for(slot: int) -> int:
-        return c - slot if width == 1 else c - width // 2 - slot * width
+        if width == 1:
+            return c - slot
+        if aligned:  # boundaries on multiples of width: cleaner labels for money amounts
+            return math.floor(exact / width) * width - slot * width
+        return c - width // 2 - slot * width
 
     def fits(first: int) -> bool:
         last_hi = first + 5 * width - (1 if width == 1 else 0)
@@ -126,7 +134,10 @@ def make_buckets(
         if width == 1:
             label, contains = str(lo), c == lo
         else:
-            label = f"{lo}–{hi}%" if unit == "percent" else f"{lo}–{hi}"
+            if label_fn:
+                label = label_fn(lo, hi)
+            else:
+                label = f"{lo}–{hi}%" if unit == "percent" else f"{lo}–{hi}"
             contains = lo <= exact < hi or (i == 4 and exact == hi)
         if contains:
             correct_id = i

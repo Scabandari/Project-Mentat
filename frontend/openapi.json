@@ -570,6 +570,70 @@
           }
         }
       }
+    },
+    "/api/v1/stats/overview": {
+      "get": {
+        "tags": [
+          "stats"
+        ],
+        "summary": "Overview",
+        "operationId": "getStatsOverview",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsOverviewOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stats/decks/{deck_id}": {
+      "get": {
+        "tags": [
+          "stats"
+        ],
+        "summary": "Deck Stats",
+        "operationId": "getDeckStats",
+        "parameters": [
+          {
+            "name": "deck_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Deck Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeckStatsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -799,6 +863,99 @@
         ],
         "title": "BucketProblem"
       },
+      "CardStatRow": {
+        "properties": {
+          "card_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Card Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "answer_type": {
+            "type": "string",
+            "title": "Answer Type"
+          },
+          "reviews": {
+            "type": "integer",
+            "title": "Reviews"
+          },
+          "accuracy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy"
+          },
+          "median_latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Latency Ms"
+          },
+          "target_ms": {
+            "type": "integer",
+            "title": "Target Ms"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "due": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due"
+          },
+          "stability_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stability Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "card_id",
+          "slug",
+          "label",
+          "answer_type",
+          "reviews",
+          "accuracy",
+          "median_latency_ms",
+          "target_ms",
+          "state",
+          "due",
+          "stability_days"
+        ],
+        "title": "CardStatRow"
+      },
       "Choice": {
         "properties": {
           "id": {
@@ -893,6 +1050,29 @@
           "tutor_enabled"
         ],
         "title": "ConfigOut"
+      },
+      "DayStat": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "reviews": {
+            "type": "integer",
+            "title": "Reviews"
+          },
+          "correct": {
+            "type": "integer",
+            "title": "Correct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "reviews",
+          "correct"
+        ],
+        "title": "DayStat"
       },
       "DeckDetailOut": {
         "properties": {
@@ -1067,6 +1247,82 @@
           "median_latency_ms"
         ],
         "title": "DeckStat"
+      },
+      "DeckStatRow": {
+        "properties": {
+          "deck_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Deck Id"
+          },
+          "deck_name": {
+            "type": "string",
+            "title": "Deck Name"
+          },
+          "section": {
+            "type": "integer",
+            "title": "Section"
+          },
+          "reviews": {
+            "type": "integer",
+            "title": "Reviews"
+          },
+          "accuracy": {
+            "type": "number",
+            "title": "Accuracy"
+          },
+          "median_latency_ms": {
+            "type": "integer",
+            "title": "Median Latency Ms"
+          },
+          "on_time": {
+            "type": "number",
+            "title": "On Time"
+          },
+          "mastery": {
+            "type": "number",
+            "title": "Mastery"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deck_id",
+          "deck_name",
+          "section",
+          "reviews",
+          "accuracy",
+          "median_latency_ms",
+          "on_time",
+          "mastery"
+        ],
+        "title": "DeckStatRow"
+      },
+      "DeckStatsOut": {
+        "properties": {
+          "deck_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Deck Id"
+          },
+          "deck_name": {
+            "type": "string",
+            "title": "Deck Name"
+          },
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/CardStatRow"
+            },
+            "type": "array",
+            "title": "Cards"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deck_id",
+          "deck_name",
+          "cards"
+        ],
+        "title": "DeckStatsOut"
       },
       "ErrorBody": {
         "properties": {
@@ -1845,6 +2101,82 @@
         },
         "type": "object",
         "title": "SettingsOut"
+      },
+      "StatsOverviewOut": {
+        "properties": {
+          "streak_days": {
+            "type": "integer",
+            "title": "Streak Days"
+          },
+          "reviews_today": {
+            "type": "integer",
+            "title": "Reviews Today"
+          },
+          "due_now": {
+            "type": "integer",
+            "title": "Due Now"
+          },
+          "reviews_7d": {
+            "type": "integer",
+            "title": "Reviews 7D"
+          },
+          "accuracy_7d": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy 7D"
+          },
+          "median_latency_ms_7d": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Latency Ms 7D"
+          },
+          "daily": {
+            "items": {
+              "$ref": "#/components/schemas/DayStat"
+            },
+            "type": "array",
+            "title": "Daily"
+          },
+          "decks": {
+            "items": {
+              "$ref": "#/components/schemas/DeckStatRow"
+            },
+            "type": "array",
+            "title": "Decks"
+          },
+          "weakest": {
+            "items": {
+              "$ref": "#/components/schemas/DeckStatRow"
+            },
+            "type": "array",
+            "title": "Weakest"
+          }
+        },
+        "type": "object",
+        "required": [
+          "streak_days",
+          "reviews_today",
+          "due_now",
+          "reviews_7d",
+          "accuracy_7d",
+          "median_latency_ms_7d",
+          "daily",
+          "decks",
+          "weakest"
+        ],
+        "title": "StatsOverviewOut"
       },
       "TutorIn": {
         "properties": {

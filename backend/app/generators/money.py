@@ -6,8 +6,9 @@ Online: big blinds, bets as standard pot fractions.
 
 from dataclasses import dataclass
 from random import Random
+from typing import Any
 
-from app.generators.base import GenContext
+from app.generators.base import GenContext, make_buckets
 
 ONLINE_FRACTIONS = (0.33, 0.5, 0.66, 0.75, 1.0, 1.25, 1.5, 2.0)
 ONLINE_FRACTIONS_L1 = (0.33, 0.5, 0.75, 1.0)
@@ -67,3 +68,43 @@ def make_spot(rng: Random, ctx: GenContext, min_frac: float = 0.25, max_frac: fl
         frac = rng.uniform(min_frac, max_frac)
     bet = _round_to(pot * frac, step)
     return Spot(pot=pot, bet=bet, fmt="live", stake=(sb, bb))
+
+
+NICE_STEPS = (1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000)
+
+
+def fmt_money(x: float, fmt: str) -> str:
+    sign = "−" if x < 0 else ""
+    if fmt == "live":
+        return f"{sign}${abs(x):,.0f}"
+    return f"{sign}{abs(x):g}bb"
+
+
+def money_buckets(
+    rng: Random, exact: float, scale: float, ctx: GenContext, lo_bound: float | None = None
+) -> tuple[list[dict[str, Any]], int]:
+    """Buckets for amounts ($ or bb). Width is a 'nice' step sized to the problem: about
+    25% / 15% / 10% of max(|answer|, scale) by level. `scale` (usually the pot) keeps
+    answers near zero, like a breakeven EV, from getting absurdly narrow buckets."""
+    exact = round(exact, 1)  # bucket the value we display, so the two always agree
+    frac = {1: 0.25, 2: 0.15}.get(ctx.level, 0.1)
+    target = max(abs(exact), scale) * frac
+    # Never width 1: make_buckets reserves that for exact integer counts.
+    width = next((n for n in NICE_STEPS if n >= target and n > 1), NICE_STEPS[-1])
+    fmt = ctx.stakes_format
+
+    def label(lo: int, hi: int) -> str:
+        if lo < 0 < hi or hi <= 0:
+            return f"{fmt_money(lo, fmt)} to {fmt_money(hi, fmt)}"
+        if fmt == "live":
+            return f"${lo:,}–{hi:,}"
+        return f"{lo}–{hi}bb"
+
+    return make_buckets(rng, exact, width, "chips", lo_bound=lo_bound, label_fn=label, aligned=True)
+
+
+def make_stacks(rng: Random, ctx: GenContext, spot: Spot, lo_mult: float, hi_mult: float) -> float:
+    """An effective stack behind, as a multiple of the pot, rounded like the spot's money."""
+    raw = spot.pot * rng.uniform(lo_mult, hi_mult)
+    step = 0.5 if spot.fmt == "online" else (5 if (spot.stake and spot.stake[1] <= 5) else 10)
+    return _round_to(raw, step)

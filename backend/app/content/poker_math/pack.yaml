@@ -313,6 +313,28 @@ decks:
     section: 5
     name: Preflop Equities
     description: Standard all-in matchups and dealing probabilities.
+    lesson_md: |
+      ## Five matchups cover most all-ins
+      | Matchup | Example | Equity |
+      |---|---|---|
+      | Pair vs two overcards | 99 vs AK | ≈ 55/45 |
+      | Pair vs one over, one under | 99 vs A5 | ≈ 70/30 |
+      | Overpair vs underpair | KK vs 88 | ≈ 80/20 |
+      | Dominated (shared card) | AK vs AQ | ≈ 70–75/25–30 |
+      | Two overs vs two unders | AK vs 87 | ≈ 60/40 |
+
+      **AA vs a random hand ≈ 85%.** Suited hands gain about **2–3%**; connected hands gain a little more against pairs because of straights.
+
+      ## How often things happen
+      - Dealt any pocket pair: **1 in 17** (≈ 6%). AA: **1 in 221**.
+      - A pair flops a set or better: **≈ 12%**, 1 in 8.5.
+      - Suited cards flop a flush draw **≈ 11%**, a flush **< 1%**.
+      - An unpaired hand pairs on the flop **≈ 32%**.
+
+      ## Set mining
+      Calling a raise with a small pair just to flop a set. You hit 1 time in 8.5, so the times you hit must pay for the 7.5 misses *and then some*: you want the **effective stack ≥ 15–20× the call**.
+
+      **Worked example:** villain raises to 3bb, effective stack 100bb → 33× → call. Villain has only 40bb → 13× → usually fold.
     cards:
       - {slug: matchup-classify, kind: generator, answer_type: choice, generator_key: matchup_classify, target_ms: 8000}
       - {slug: matchup-equity, kind: generator, answer_type: bucket, generator_key: matchup_equity, target_ms: 12000}
@@ -341,11 +363,32 @@ decks:
     section: 6
     name: Betting Math
     description: What your bets require. Bluffs, defense, value-to-bluff ratios.
+    lesson_md: |
+      ## The other side of pot odds
+      Pot odds tell you when to **call**. Betting math tells you what your **bets** need, and how often you must **defend**.
+
+      ## Bluff breakeven
+      You bet **B** into **P** with nothing. You risk B to win P:
+
+      **fold% needed = B / (P + B)**. Half pot needs 33% folds; pot needs 50%.
+
+      ## Minimum defense frequency (MDF)
+      **MDF = P / (P + B)**. If you fold more often than 1 − MDF, villain profits by betting any two cards. Facing a pot-size bet you must continue **50%** of the time.
+
+      ## Value-to-bluff ratio
+      On the river, a polarised range (nuts or air) should contain bluffs in the same proportion as villain's **call equity**: **B / (P + 2B)**.
+      - ½ pot → 25% bluffs (3 value : 1 bluff)
+      - Pot → 33% bluffs (2 : 1)
+      - 2× pot → 40% bluffs (3 : 2)
+
+      Bigger bets can carry more bluffs, but each bluff must work more often.
+
+      **Worked example:** you bet $60 into $100. Villain must fold 60 / 160 = **37.5%** for a bluff to profit. If you think he folds half the time, bluff.
     cards:
       - {slug: bluff-breakeven, kind: generator, answer_type: bucket, generator_key: bluff_breakeven, target_ms: 10000}
       - {slug: mdf, kind: generator, answer_type: bucket, generator_key: mdf, target_ms: 10000}
       - {slug: value-bluff-ratio, kind: generator, answer_type: bucket, generator_key: value_bluff_ratio, target_ms: 12000}
-      - {slug: bluff-or-check, kind: generator, answer_type: action, generator_key: bluff_or_check, target_ms: 20000}
+      - {slug: bluff-or-check, kind: generator, answer_type: choice, generator_key: bluff_or_check, target_ms: 20000}
       - slug: fact-value-bluff-ratio
         kind: static
         target_ms: 8000
@@ -357,6 +400,28 @@ decks:
     section: 7
     name: Implied Odds
     description: Paying now for money you'll win later.
+    lesson_md: |
+      ## Implied odds
+      Sometimes the price is wrong *now* but right once you count the money you'll win **later** when you hit.
+
+      **Extra you need = call ÷ equity − (pot + bet + call)**
+
+      **Worked example:** pot $100, villain bets $50, you have a flush draw (9 outs, ≈ 19% for one card). Direct odds need 25%.
+
+      $50 ÷ 0.19 = $263. Minus the $200 that will be in the pot: you need to win about **$63 more** on later streets when you hit. Against a deep opponent who pays off, that's easy; against a short stack, it's impossible.
+
+      ## What makes implied odds good
+      - Deep effective stacks (there's money left to win).
+      - **Disguised** draws, like gutshots or sets, that villain won't see coming.
+      - An opponent who calls too much.
+
+      ## Reverse implied odds
+      Some draws **hit and still lose**, and lose a big pot. Classic examples:
+      - **Low flush draws**: any higher flush beats you.
+      - The **ignorant end** of a straight: you make the low straight while villain makes the high one.
+      - Weak top pair against a tight opponent who only continues when he beats it.
+
+      Prefer draws to the **nuts**.
     cards:
       - {slug: implied-required, kind: generator, answer_type: bucket, generator_key: implied_required, target_ms: 25000}
       - {slug: implied-call, kind: generator, answer_type: action, generator_key: implied_call, target_ms: 30000}
@@ -372,6 +437,29 @@ decks:
     section: 8
     name: Stack Geometry
     description: Stack-to-pot ratio, commitment and multi-street sizing.
+    lesson_md: |
+      ## Effective stack
+      The **smaller** of the two stacks. It's the most either player can win or lose. Your $2,000 doesn't matter against a $300 stack.
+
+      ## SPR: stack-to-pot ratio
+      **SPR = effective stack ÷ pot** at the start of the flop.
+
+      | SPR | Meaning with top pair |
+      |---|---|
+      | Under 4 | Usually committed: get it in |
+      | 4–10 | Depends on board and opponent |
+      | Over 10 | One pair is a bluff-catcher; stack off only with strong hands |
+
+      SPR is decided **preflop**: a 3-bet pot with 100bb stacks often has an SPR around 4; a limped pot can be 30+.
+
+      ## Geometric bet sizing
+      To get all-in by the river with the same-size bet each street: each called bet of **f × pot** multiplies the pot by **(1 + 2f)**. So
+
+      **(1 + 2f)^streets = (pot + 2 × stack) / pot**
+
+      **Worked example:** pot 10bb, 95bb behind, three streets. Final pot 200bb = 20× today's. 20^(1/3) ≈ 2.71 → f ≈ **86% pot** each street.
+
+      **Shortcut:** SPR ≈ 1 → one pot-size bet. SPR ≈ 4 → two streets of pot. SPR ≈ 13 → three streets of pot.
     cards:
       - {slug: spr-calc, kind: generator, answer_type: bucket, generator_key: spr_calc, target_ms: 8000}
       - {slug: spr-classify, kind: generator, answer_type: choice, generator_key: spr_classify, target_ms: 8000}
@@ -393,6 +481,28 @@ decks:
     section: 9
     name: Expected Value
     description: Probability × outcome, summed.
+    lesson_md: |
+      ## EV = Σ (probability × outcome)
+      The average result if the spot repeated forever. Everything in the earlier sections is a special case.
+
+      ## Calling all-in
+      **EV = equity × final pot − call**. The pot already includes villain's bet.
+
+      Pot $100, villain shoves $100, you call $100 with 40%: 0.40 × $300 − $100 = **+$20**.
+
+      ## Pure bluff
+      **EV = fold% × pot − (1 − fold%) × bet**.
+
+      Bet $50 into $100, villain folds 40%: 0.4 × 100 − 0.6 × 50 = **+$10**.
+
+      ## Semi-bluff shove
+      You win the pot when villain folds, and still have equity when called:
+
+      EV = F × pot + (1 − F) × [equity × (pot + 2 × stack) − stack]
+
+      Set EV = 0 and solve for **F**, the fold frequency you need. With a big draw you often need far fewer folds than a pure bluff, which is why aggressive draws are profitable.
+
+      **Shortcut:** first ask "is it +EV when called?" If yes, shove. If not, how often must he fold?
     cards:
       - {slug: ev-call, kind: generator, answer_type: bucket, generator_key: ev_call, target_ms: 25000}
       - {slug: ev-bluff, kind: generator, answer_type: bucket, generator_key: ev_bluff, target_ms: 20000}
@@ -407,8 +517,20 @@ decks:
     section: 11
     name: Mixed Spots
     description: Real hands chaining several skills.
+    lesson_md: |
+      ## Putting it together
+      Real decisions chain two or three skills. Work them in order and say each number out loud:
+
+      1. **What's the price?** call ÷ final pot (section 4), or the bluff-breakeven / MDF table (section 6).
+      2. **What do I have?** Outs → equity (section 3), or count combos in villain's range (section 2).
+      3. **What's behind?** Effective stack and SPR (section 8). Is it all-in, or will there be more betting (implied odds, section 7)?
+      4. **Compare and decide.** If it's close, the tiebreaker is usually future money: implied or reverse implied odds.
+
+      **Worked example: river bluff-catch.** Villain bets pot. You need 33%. His range: {sets: 6 combos, two pair: 3} for value, {missed flush draws: 12} as bluffs. You beat 12 of 21 = 57% → **call**.
+
+      **Worked example: flop shove.** Villain shoves 1.5× pot. You need 1.5 / 4 = 37.5%. You have a combo draw, 15 outs → ≈ 54% with two cards to come → **call**.
     cards:
       - {slug: spot-draw-call, kind: generator, answer_type: action, generator_key: spot_draw_call, target_ms: 30000}
       - {slug: spot-river-bluffcatch, kind: generator, answer_type: action, generator_key: spot_river_bluffcatch, target_ms: 30000}
-      - {slug: spot-flop-commit, kind: generator, answer_type: action, generator_key: spot_flop_commit, target_ms: 35000}
+      - {slug: spot-flop-commit, kind: generator, answer_type: choice, generator_key: spot_flop_commit, target_ms: 35000}
       - {slug: spot-set-mine, kind: generator, answer_type: action, generator_key: spot_set_mine, target_ms: 25000}

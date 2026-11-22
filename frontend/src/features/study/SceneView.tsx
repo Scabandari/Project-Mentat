@@ -6,6 +6,12 @@ import { CardRow } from './PlayingCard'
 export function SceneView({ scene }: { scene: Scene }) {
   const hasCards = Boolean(scene.board?.length || scene.hero?.length || scene.villain?.length)
   const hasMoney = scene.pot != null
+  const stacks = [
+    scene.hero_stack != null ? `You ${formatMoney(scene.hero_stack, scene.money_format)}` : null,
+    scene.villain_stack != null
+      ? `Villain ${formatMoney(scene.villain_stack, scene.money_format)}`
+      : null,
+  ].filter(Boolean)
   if (!hasCards && !hasMoney) return null
   return (
     <div className="flex flex-col items-center gap-3 rounded-2xl bg-emerald-950/40 p-4 ring-1 ring-emerald-900/50">
@@ -23,6 +29,11 @@ export function SceneView({ scene }: { scene: Scene }) {
               Bet {formatMoney(scene.bet, scene.money_format)}
             </span>
           )}
+          {stacks.map((s) => (
+            <span key={s} className="rounded-full bg-sky-500/15 px-2.5 py-1 text-sky-200">
+              {s}
+            </span>
+          ))}
         </div>
       )}
       {scene.hero?.length ? <CardRow cards={scene.hero} label="You" /> : null}

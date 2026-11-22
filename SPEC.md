@@ -136,7 +136,7 @@ class PotOddsRequiredEquity(Generator):
 | `action` | Fold / Call / Raise | Against EV-maximising action |
 | `flip` | Reveal → self-rate | User picks Again/Hard/Good/Easy |
 
-**Bucket construction:** counts use exact values (width 1). Percentages use even widths by level (L1 10 pts, L2 6, L3 4); the correct bucket is centred on the exact answer, so the tolerance is ±width/2. The correct slot is drawn uniformly from the slots that keep all five buckets inside 0–100%; near an edge (e.g. a 20% answer at L1) only some slots are feasible, which is unavoidable with contiguous buckets and shrinks as the level rises.
+**Bucket construction:** counts use exact values (width 1). Money amounts use "nice" steps ($5, $10, $25…) sized to the problem, with boundaries on multiples of the step for readable labels. Percentages use even widths by level (L1 10 pts, L2 6, L3 4); the correct bucket is centred on the exact answer, so the tolerance is ±width/2. The correct slot is drawn uniformly from the slots that keep all five buckets inside 0–100%; near an edge (e.g. a 20% answer at L1) only some slots are feasible, which is unavoidable with contiguous buckets and shrinks as the level rises.
 
 **Rating (auto-graded types):**
 | Result | Rating |
@@ -228,8 +228,8 @@ Conventions: plain resources (no success envelope); errors are `{"error": {"code
 | POST | `/sessions/{id}/next` | `NextOut`: `{problem: ProblemOut \| null, queue: {due, new, reviewed}}`. `problem: null` = queue empty. Idempotent until the pending problem is answered. |
 | POST | `/instances/{id}/answer` | `GradeOut`. Body: `AnswerIn` |
 | POST | `/sessions/{id}/end` | `SessionSummaryOut` |
-| GET | `/stats/overview` | `StatsOverviewOut` |
-| GET | `/stats/decks/{id}` | `DeckStatsOut` |
+| GET | `/stats/overview` | `StatsOverviewOut`: streak, today, due, 7-day accuracy and median time, 14-day activity, per-deck accuracy / on-time share / mastery, weakest 3 decks |
+| GET | `/stats/decks/{id}` | `DeckStatsOut`: per-card reviews, accuracy, median time, FSRS state |
 | GET | `/reviews?cursor=` | `Page[ReviewOut]` |
 | POST | `/instances/{id}/tutor` | `TutorOut`. Body `{question?}`. 409 until the problem is answered (never leaks the key); 503 if no API key. |
 | GET | `/config` | `{tutor_enabled}` |
@@ -406,7 +406,7 @@ Full card-by-card curriculum in **[CURRICULUM.md](CURRICULUM.md)**: 11 sections 
 | **M0: Infra** ✅ | Compose (db/api/web), Makefile, Alembic baseline, health check, OpenAPI → RTK Query codegen, CI. |
 | **M1: Engine** ✅ | Models, seeding, FSRS, sessions, static `flip` cards end-to-end. |
 | **M2: Generators** ✅ | Generator registry, `bucket` grading, live/online rendering, sections 0–4, lessons, result/explain screen, tutor chain. |
-| **M3: Betting math** | Sections 5–9, capstone, Drill mode, stats. |
+| **M3: Betting math** ✅ | Sections 5–9, capstone, Drill mode, stats. |
 | **M4: Generic learning** | LLM deck builder, CSV import, user-created decks. |
 | **v2** | Auth → subdomain via Cloudflare Tunnel, PWA/offline, section 10, `preflop-ranges` pack. |
 

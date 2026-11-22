@@ -1,5 +1,5 @@
 import { baseApi as api } from './baseApi'
-export const addTagTypes = ['health', 'me', 'catalog', 'study', 'meta'] as const
+export const addTagTypes = ['health', 'me', 'catalog', 'study', 'meta', 'stats'] as const
 const injectedRtkApi = api
   .enhanceEndpoints({
     addTagTypes,
@@ -76,6 +76,16 @@ const injectedRtkApi = api
         query: () => ({ url: `/api/v1/config` }),
         providesTags: ['study', 'meta'],
       }),
+      getStatsOverview: build.query<GetStatsOverviewApiResponse, GetStatsOverviewApiArg>({
+        query: () => ({ url: `/api/v1/stats/overview` }),
+        providesTags: ['stats'],
+      }),
+      getDeckStats: build.query<GetDeckStatsApiResponse, GetDeckStatsApiArg>({
+        query: (queryArg) => ({
+          url: `/api/v1/stats/decks/${queryArg.deckId}`,
+        }),
+        providesTags: ['stats'],
+      }),
     }),
     overrideExisting: false,
   })
@@ -122,6 +132,12 @@ export type TutorExplainApiArg = {
 }
 export type GetConfigApiResponse = /** status 200 Successful Response */ ConfigOut
 export type GetConfigApiArg = void
+export type GetStatsOverviewApiResponse = /** status 200 Successful Response */ StatsOverviewOut
+export type GetStatsOverviewApiArg = void
+export type GetDeckStatsApiResponse = /** status 200 Successful Response */ DeckStatsOut
+export type GetDeckStatsApiArg = {
+  deckId: string
+}
 export type HealthOut = {
   status: 'ok' | 'degraded'
   db: 'ok' | 'down'
@@ -352,6 +368,50 @@ export type TutorIn = {
 export type ConfigOut = {
   tutor_enabled: boolean
 }
+export type DayStat = {
+  date: string
+  reviews: number
+  correct: number
+}
+export type DeckStatRow = {
+  deck_id: string
+  deck_name: string
+  section: number
+  reviews: number
+  accuracy: number
+  median_latency_ms: number
+  on_time: number
+  mastery: number
+}
+export type StatsOverviewOut = {
+  streak_days: number
+  reviews_today: number
+  due_now: number
+  reviews_7d: number
+  accuracy_7d: number | null
+  median_latency_ms_7d: number | null
+  daily: DayStat[]
+  decks: DeckStatRow[]
+  weakest: DeckStatRow[]
+}
+export type CardStatRow = {
+  card_id: string
+  slug: string
+  label: string
+  answer_type: string
+  reviews: number
+  accuracy: number | null
+  median_latency_ms: number | null
+  target_ms: number
+  state: string
+  due: string | null
+  stability_days: number | null
+}
+export type DeckStatsOut = {
+  deck_id: string
+  deck_name: string
+  cards: CardStatRow[]
+}
 export const {
   useGetHealthQuery,
   useGetSettingsQuery,
@@ -365,4 +425,6 @@ export const {
   useAnswerProblemMutation,
   useTutorExplainMutation,
   useGetConfigQuery,
+  useGetStatsOverviewQuery,
+  useGetDeckStatsQuery,
 } = injectedRtkApi

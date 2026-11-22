@@ -1,4 +1,4 @@
-import { Dumbbell, Play } from 'lucide-react'
+import { BarChart3, Dumbbell, Play } from 'lucide-react'
 import { Link, useNavigate } from 'react-router'
 
 import {
@@ -38,16 +38,23 @@ export function HomePage() {
           <h1 className="text-3xl font-bold tracking-tight">Mentat</h1>
           <p className="text-muted-foreground text-sm">Poker math, at the speed of thought.</p>
         </div>
-        <SegmentedToggle
-          label="Stakes format"
-          value={settings?.stakes_format ?? 'online'}
-          disabled={savingSettings || !settings}
-          onChange={(stakes_format) => void updateSettings({ settingsIn: { stakes_format } })}
-          options={[
-            { value: 'live', label: 'Live' },
-            { value: 'online', label: 'Online' },
-          ]}
-        />
+        <div className="flex items-center gap-1">
+          <Button asChild size="icon" variant="ghost" aria-label="Progress">
+            <Link to="/stats">
+              <BarChart3 />
+            </Link>
+          </Button>
+          <SegmentedToggle
+            label="Stakes format"
+            value={settings?.stakes_format ?? 'online'}
+            disabled={savingSettings || !settings}
+            onChange={(stakes_format) => void updateSettings({ settingsIn: { stakes_format } })}
+            options={[
+              { value: 'live', label: 'Live' },
+              { value: 'online', label: 'Online' },
+            ]}
+          />
+        </div>
       </header>
 
       {isError && (

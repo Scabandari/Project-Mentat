@@ -140,3 +140,94 @@ def test_draw_decisions_are_balanced() -> None:
             picks = [generate(key, s, {}, ctx).correct for s in range(200)]
             share = picks.count(call_value) / len(picks)
             assert 0.35 < share < 0.65, (key, ctx, share)
+
+
+# ---------------------------------------------------------------- M3 math
+from app.generators.poker.capstone import _combos  # noqa: E402
+from app.generators.poker.s5_preflop import preflop_equity  # noqa: E402
+from app.generators.poker.s6_betting import bluff_share, breakeven, mdf_of  # noqa: E402
+from app.generators.poker.s7_implied import implied_needed  # noqa: E402
+from app.generators.poker.s8_stacks import geometric_fraction  # noqa: E402
+from app.generators.poker.s9_ev import (  # noqa: E402
+    ev_bluff,
+    ev_call,
+    required_fold_equity,
+    shove_ev,
+)
+
+
+def test_preflop_equity_known_matchups() -> None:
+    assert preflop_equity(("As", "Ad"), ("Kh", "Kc")) == pytest.approx(0.82, abs=0.01)
+    assert preflop_equity(("As", "Kd"), ("Qh", "Qc")) == pytest.approx(0.43, abs=0.01)
+    assert preflop_equity(("2s", "2d"), ("Ah", "Kc")) == pytest.approx(0.53, abs=0.01)
+    assert preflop_equity(("As", "Kd"), ("Ah", "Qc")) == pytest.approx(0.74, abs=0.015)
+
+
+def test_betting_identities() -> None:
+    spot = Spot(pot=100, bet=75, fmt="online")
+    assert breakeven(spot) + mdf_of(spot) == pytest.approx(1)
+    assert bluff_share(spot) == pytest.approx(required_equity(spot))
+    # A bluff at exactly breakeven fold% has zero EV.
+    assert ev_bluff(100, 75, breakeven(spot)) == pytest.approx(0)
+
+
+def test_geometric_sizing_gets_stacks_in() -> None:
+    for pot, stack, n in [(100, 400, 3), (60, 90, 2), (10, 95, 3)]:
+        f = geometric_fraction(pot, stack, n)
+        p, behind = float(pot), float(stack)
+        for _ in range(n):
+            bet = f * p
+            p += 2 * bet
+            behind -= bet
+        assert behind == pytest.approx(0, abs=1e-6)
+
+
+def test_ev_formulas() -> None:
+    # Call 50 into 150 (incl. bet) with 25% equity: exactly breakeven.
+    assert ev_call(150, 50, 0.25) == pytest.approx(0)
+    # Shove at the break-even fold frequency has zero EV.
+    for pot, stack, eq in [(100, 300, 0.35), (40, 90, 0.32), (200, 420, 0.35)]:
+        f = required_fold_equity(pot, stack, eq)
+        assert 0 < f < 1
+        assert shove_ev(pot, stack, f, eq) == pytest.approx(0, abs=1e-9)
+
+
+def test_implied_odds_makes_call_break_even() -> None:
+    spot = Spot(pot=100, bet=50, fmt="online")
+    eq = 9 / 47
+    extra = implied_needed(spot, eq)
+    assert eq * (spot.pot + 2 * spot.bet + extra) - spot.bet == pytest.approx(0)
+
+
+def test_bluffcatch_recount() -> None:
+    assert _combos(["KK", "AKs"], ["Kh", "7c", "2d", "9s", "3h"]) == {"KK": 3, "AKs": 3}
+
+
+@pytest.mark.parametrize(
+    ("key", "positive"),
+    [
+        ("set_mining", "call"),
+        ("spot_set_mine", "call"),
+        ("implied_call", "call"),
+        ("ev_shove", "raise"),
+        ("spot_draw_call", "call"),
+        ("spot_river_bluffcatch", "call"),
+    ],
+)
+def test_m3_decisions_are_balanced(key: str, positive: str) -> None:
+    picks = [generate(key, s, {}, GenContext("live", 2)).correct for s in range(150)]
+    assert 0.3 < picks.count(positive) / len(picks) < 0.7
+
+
+@pytest.mark.parametrize("key", ["bluff_or_check", "spot_flop_commit", "spr_classify"])
+def test_m3_choices_are_balanced(key: str) -> None:
+    picks = [generate(key, s, {}, GenContext("online", 1)).correct for s in range(150)]
+    n = len(set(picks))
+    assert all(picks.count(c) / len(picks) > 0.5 / n for c in set(picks))
+
+
+def test_implied_payoff_never_exceeds_villains_stack() -> None:
+    for s in range(100):
+        inst = generate("implied_call", s, {}, GenContext("online", 2))
+        assert inst.scene is not None
+        assert "left" in inst.prompt and inst.scene["villain_stack"] > 0
