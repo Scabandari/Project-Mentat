@@ -1,0 +1,290 @@
+# Poker Math pack. See CURRICULUM.md.
+# - `kind: generator` cards stay inactive until their generator is registered (M2+).
+# - `kind: static` cards are atomic facts, studied as flip cards.
+slug: poker-math
+name: Poker Math
+description: Compute or recall every number you need at the No-Limit Hold'em table, fast.
+version: 1
+
+decks:
+  # ---------------------------------------------------------------- 0
+  - slug: hand-basics
+    section: 0
+    name: Hand Basics
+    description: Hand rankings, kickers, reading the board, the nuts.
+    cards:
+      - {slug: rankings-order, kind: generator, answer_type: choice, generator_key: rankings_order, target_ms: 5000}
+      - {slug: winner-showdown, kind: generator, answer_type: choice, generator_key: winner_showdown, target_ms: 12000}
+      - {slug: best-five, kind: generator, answer_type: choice, generator_key: best_five, target_ms: 10000}
+      - {slug: kicker-plays, kind: generator, answer_type: choice, generator_key: kicker_plays, target_ms: 12000}
+      - {slug: board-possible, kind: generator, answer_type: choice, generator_key: board_possible, target_ms: 8000}
+      - {slug: the-nuts, kind: generator, answer_type: choice, generator_key: the_nuts, target_ms: 15000}
+      - slug: fact-rankings-list
+        kind: static
+        target_ms: 10000
+        front_md: List the 10 hand rankings, best to worst.
+        back_md: |
+          1. Royal flush
+          2. Straight flush
+          3. Four of a kind
+          4. Full house
+          5. Flush
+          6. Straight
+          7. Three of a kind
+          8. Two pair
+          9. One pair
+          10. High card
+      - slug: fact-flush-vs-straight
+        kind: static
+        target_ms: 5000
+        front_md: Which wins, a **flush** or a **straight**?
+        back_md: "**Flush.** A flush is rarer than a straight."
+      - slug: fact-boat-vs-flush
+        kind: static
+        target_ms: 5000
+        front_md: Which wins, a **full house** or a **flush**?
+        back_md: "**Full house.**"
+      - slug: fact-trips-vs-two-pair
+        kind: static
+        target_ms: 5000
+        front_md: Which wins, **three of a kind** or **two pair**?
+        back_md: "**Three of a kind.**"
+      - slug: fact-wheel
+        kind: static
+        target_ms: 6000
+        front_md: Is **A-2-3-4-5** a straight? Where does it rank among straights?
+        back_md: Yes, it's the **wheel**, the *lowest* straight. The ace plays low here; 2-3-4-5-6 beats it.
+      - slug: fact-best-five
+        kind: static
+        target_ms: 6000
+        front_md: How many cards make a hand, and from which?
+        back_md: Your **best 5 of 7**, using any combination of your 2 hole cards and the 5 board cards (including zero hole cards, "playing the board").
+
+  # ---------------------------------------------------------------- 1
+  - slug: number-fluency
+    section: 1
+    name: Number Fluency
+    description: Ratios, percentages and the bet-size table.
+    cards:
+      - {slug: ratio-to-pct, kind: generator, answer_type: bucket, generator_key: ratio_to_pct, target_ms: 5000}
+      - {slug: pct-to-ratio, kind: generator, answer_type: choice, generator_key: pct_to_ratio, target_ms: 5000}
+      - {slug: bet-as-fraction, kind: generator, answer_type: choice, generator_key: bet_as_fraction, target_ms: 6000}
+      - {slug: table-call-equity, kind: generator, answer_type: choice, generator_key: table_call_equity, target_ms: 5000}
+      - {slug: table-bluff-breakeven, kind: generator, answer_type: choice, generator_key: table_bluff_breakeven, target_ms: 5000}
+      - {slug: table-mdf, kind: generator, answer_type: choice, generator_key: table_mdf, target_ms: 5000}
+      - slug: fact-call-equity-formula
+        kind: static
+        target_ms: 8000
+        front_md: Villain bets **B** into a pot of **P**. What equity do you need to call?
+        back_md: "**B / (P + 2B)**: your call divided by the final pot."
+      - slug: fact-bluff-formula
+        kind: static
+        target_ms: 8000
+        front_md: You bet **B** into a pot of **P**. How often must villain fold for a pure bluff to break even?
+        back_md: "**B / (P + B)**: risk over (risk + reward)."
+      - slug: fact-mdf-formula
+        kind: static
+        target_ms: 8000
+        front_md: Facing a bet of **B** into **P**, what's the minimum defense frequency?
+        back_md: "**P / (P + B)**, which is 1 − the bluff breakeven."
+      - {slug: fact-call-third, kind: static, target_ms: 5000, front_md: "Facing a **⅓-pot** bet: equity needed to call?", back_md: "**20%**"}
+      - {slug: fact-call-half, kind: static, target_ms: 5000, front_md: "Facing a **½-pot** bet: equity needed to call?", back_md: "**25%**"}
+      - {slug: fact-call-two-thirds, kind: static, target_ms: 5000, front_md: "Facing a **⅔-pot** bet: equity needed to call?", back_md: "**29%** (≈ 28.6%)"}
+      - {slug: fact-call-three-quarters, kind: static, target_ms: 5000, front_md: "Facing a **¾-pot** bet: equity needed to call?", back_md: "**30%**"}
+      - {slug: fact-call-pot, kind: static, target_ms: 5000, front_md: "Facing a **pot-sized** bet: equity needed to call?", back_md: "**33%**"}
+      - {slug: fact-call-2x, kind: static, target_ms: 5000, front_md: "Facing a **2× pot** overbet: equity needed to call?", back_md: "**40%**"}
+      - {slug: fact-bluff-third, kind: static, target_ms: 5000, front_md: "You bluff **⅓ pot**. How often must it work?", back_md: "**25%**"}
+      - {slug: fact-bluff-half, kind: static, target_ms: 5000, front_md: "You bluff **½ pot**. How often must it work?", back_md: "**33%**"}
+      - {slug: fact-bluff-two-thirds, kind: static, target_ms: 5000, front_md: "You bluff **⅔ pot**. How often must it work?", back_md: "**40%**"}
+      - {slug: fact-bluff-three-quarters, kind: static, target_ms: 5000, front_md: "You bluff **¾ pot**. How often must it work?", back_md: "**43%**"}
+      - {slug: fact-bluff-pot, kind: static, target_ms: 5000, front_md: "You bluff **pot**. How often must it work?", back_md: "**50%**"}
+      - {slug: fact-bluff-2x, kind: static, target_ms: 5000, front_md: "You bluff **2× pot**. How often must it work?", back_md: "**67%**"}
+      - {slug: fact-mdf-third, kind: static, target_ms: 5000, front_md: "Facing **⅓ pot**: minimum defense frequency?", back_md: "**75%**"}
+      - {slug: fact-mdf-half, kind: static, target_ms: 5000, front_md: "Facing **½ pot**: minimum defense frequency?", back_md: "**67%**"}
+      - {slug: fact-mdf-two-thirds, kind: static, target_ms: 5000, front_md: "Facing **⅔ pot**: minimum defense frequency?", back_md: "**60%**"}
+      - {slug: fact-mdf-three-quarters, kind: static, target_ms: 5000, front_md: "Facing **¾ pot**: minimum defense frequency?", back_md: "**57%**"}
+      - {slug: fact-mdf-pot, kind: static, target_ms: 5000, front_md: "Facing **pot**: minimum defense frequency?", back_md: "**50%**"}
+      - {slug: fact-mdf-2x, kind: static, target_ms: 5000, front_md: "Facing **2× pot**: minimum defense frequency?", back_md: "**33%**"}
+
+  # ---------------------------------------------------------------- 2
+  - slug: combinatorics
+    section: 2
+    name: Combinatorics
+    description: Counting hand combinations and card removal.
+    cards:
+      - {slug: combos-card-removal, kind: generator, answer_type: bucket, generator_key: combos_card_removal, target_ms: 12000}
+      - {slug: combos-pairs-on-board, kind: generator, answer_type: bucket, generator_key: combos_pairs_on_board, target_ms: 15000}
+      - {slug: combos-range-count, kind: generator, answer_type: bucket, generator_key: combos_range_count, target_ms: 25000}
+      - {slug: blockers, kind: generator, answer_type: bucket, generator_key: blockers, target_ms: 15000}
+      - {slug: fact-combos-pair, kind: static, target_ms: 5000, front_md: "How many combos of a specific **pocket pair** (e.g. QQ)?", back_md: "**6**: C(4,2)."}
+      - {slug: fact-combos-suited, kind: static, target_ms: 5000, front_md: "How many combos of a specific **suited** hand (e.g. AKs)?", back_md: "**4**, one per suit."}
+      - {slug: fact-combos-offsuit, kind: static, target_ms: 5000, front_md: "How many combos of a specific **offsuit** hand (e.g. AKo)?", back_md: "**12**: 4 × 4 − 4 suited."}
+      - {slug: fact-combos-unpaired, kind: static, target_ms: 5000, front_md: "How many combos of an unpaired hand, **any suits** (e.g. AK)?", back_md: "**16**: 4 suited + 12 offsuit."}
+      - {slug: fact-combos-total, kind: static, target_ms: 5000, front_md: "How many possible two-card starting hands?", back_md: "**1,326**: C(52,2)."}
+      - {slug: fact-combos-distinct, kind: static, target_ms: 5000, front_md: "How many *strategically distinct* starting hands?", back_md: "**169**: 13 pairs + 78 suited + 78 offsuit."}
+      - slug: fact-card-removal-rule
+        kind: static
+        target_ms: 8000
+        front_md: One **A** is on the board. How many combos of **AA** remain? Of **AK**?
+        back_md: "**AA: 3** (C(3,2)). **AK: 12** (3 aces × 4 kings)."
+
+  # ---------------------------------------------------------------- 3
+  - slug: outs-and-draws
+    section: 3
+    name: Outs & Draws
+    description: Counting outs and converting them to equity.
+    cards:
+      - {slug: outs-count, kind: generator, answer_type: bucket, generator_key: outs_count, target_ms: 15000}
+      - {slug: outs-combo, kind: generator, answer_type: bucket, generator_key: outs_combo, target_ms: 20000}
+      - {slug: outs-dirty, kind: generator, answer_type: bucket, generator_key: outs_dirty, target_ms: 25000}
+      - {slug: outs-to-equity-flop, kind: generator, answer_type: bucket, generator_key: outs_to_equity_flop, target_ms: 8000}
+      - {slug: outs-to-equity-turn, kind: generator, answer_type: bucket, generator_key: outs_to_equity_turn, target_ms: 6000}
+      - {slug: fact-outs-flush-draw, kind: static, target_ms: 5000, front_md: "Outs for a **flush draw**?", back_md: "**9**: 13 of the suit − 4 you can see."}
+      - {slug: fact-outs-oesd, kind: static, target_ms: 5000, front_md: "Outs for an **open-ended straight draw**?", back_md: "**8**: 4 cards at each end."}
+      - {slug: fact-outs-gutshot, kind: static, target_ms: 5000, front_md: "Outs for a **gutshot** straight draw?", back_md: "**4**"}
+      - {slug: fact-outs-overcards, kind: static, target_ms: 5000, front_md: "Outs for **two overcards** (to pair one)?", back_md: "**6**: 3 + 3. Often dirty."}
+      - {slug: fact-outs-pair-improve, kind: static, target_ms: 5000, front_md: "You have **one pair** (pocket cards unpaired, one pairs the board). Outs to two pair or trips?", back_md: "**5**: 2 to trips + 3 to pair your kicker."}
+      - {slug: fact-outs-set-boat, kind: static, target_ms: 6000, front_md: "You flop a **set**. Outs to a full house or better on the turn?", back_md: "**7**: 3 + 3 pairing the board, 1 for quads."}
+      - {slug: fact-outs-combo-fd-oesd, kind: static, target_ms: 6000, front_md: "Outs for a **flush draw + open-ender**?", back_md: "**15**: 9 + 8 − 2 overlapping cards."}
+      - {slug: fact-outs-combo-fd-gut, kind: static, target_ms: 6000, front_md: "Outs for a **flush draw + gutshot**?", back_md: "**12**: 9 + 4 − 1 overlapping card."}
+      - slug: fact-rule-2-4
+        kind: static
+        target_ms: 8000
+        front_md: State the **rule of 2 and 4**.
+        back_md: |
+          Equity ≈ outs × **4** on the flop (two cards to come, if you'll see both).
+          Equity ≈ outs × **2** on the turn (one card to come).
+          With more than 8 outs on the flop, subtract (outs − 8): 15 outs → 60 − 7 = **53%** (exact 54%).
+      - {slug: fact-odds-fd, kind: static, target_ms: 6000, front_md: "**Flush draw** on the flop: equity by the river? By the turn?", back_md: "**35%** by the river · **19%** next card."}
+      - {slug: fact-odds-oesd, kind: static, target_ms: 6000, front_md: "**Open-ender** on the flop: equity by the river? By the turn?", back_md: "**32%** by the river · **17%** next card."}
+      - {slug: fact-odds-gutshot, kind: static, target_ms: 6000, front_md: "**Gutshot** on the flop: equity by the river? By the turn?", back_md: "**17%** by the river · **9%** next card."}
+      - {slug: fact-odds-backdoor-flush, kind: static, target_ms: 6000, front_md: "**Backdoor flush draw** (3 to a flush on the flop): chance to complete?", back_md: "**≈ 4%**: needs both turn and river."}
+
+  # ---------------------------------------------------------------- 4
+  - slug: pot-odds
+    section: 4
+    name: Pot Odds
+    description: Equity needed vs. equity you have.
+    cards:
+      - {slug: pot-odds-required, kind: generator, answer_type: bucket, generator_key: pot_odds_required, target_ms: 10000}
+      - {slug: pot-odds-vs-draw, kind: generator, answer_type: choice, generator_key: pot_odds_vs_draw, target_ms: 15000}
+      - {slug: call-or-fold-draw, kind: generator, answer_type: action, generator_key: call_or_fold_draw, target_ms: 25000}
+      - {slug: pot-odds-multiway, kind: generator, answer_type: bucket, generator_key: pot_odds_multiway, target_ms: 20000}
+      - slug: fact-pot-odds-method
+        kind: static
+        target_ms: 10000
+        front_md: "What's the 3-step check before calling with a draw?"
+        back_md: |
+          1. **Required equity** = call / (pot after you call).
+          2. **Your equity** ≈ outs × 2 (one card) or × 4 (two cards, all-in).
+          3. **Call** if your equity ≥ required (plus implied odds); otherwise fold.
+      - slug: fact-pot-odds-one-card
+        kind: static
+        target_ms: 8000
+        front_md: You have a flush draw on the flop and villain bets. Why use ×2, not ×4?
+        back_md: Unless you're all-in, you only get **one card** for this price. Villain can bet again on the turn.
+
+  # ---------------------------------------------------------------- 5
+  - slug: preflop-equities
+    section: 5
+    name: Preflop Equities
+    description: Standard all-in matchups and dealing probabilities.
+    cards:
+      - {slug: matchup-classify, kind: generator, answer_type: choice, generator_key: matchup_classify, target_ms: 8000}
+      - {slug: matchup-equity, kind: generator, answer_type: bucket, generator_key: matchup_equity, target_ms: 12000}
+      - {slug: set-mining, kind: generator, answer_type: action, generator_key: set_mining, target_ms: 25000}
+      - {slug: fact-pair-vs-overs, kind: static, target_ms: 6000, front_md: "**Pair vs. two overcards** (e.g. 99 vs AK): equity?", back_md: "**≈ 55/45** for the pair. A coin flip."}
+      - {slug: fact-pair-vs-over-under, kind: static, target_ms: 6000, front_md: "**Pair vs. one over, one under** (e.g. 99 vs A5): equity?", back_md: "**≈ 70/30** for the pair."}
+      - {slug: fact-overpair-vs-underpair, kind: static, target_ms: 6000, front_md: "**Overpair vs. underpair** (e.g. KK vs 88): equity?", back_md: "**≈ 80/20** (AA vs KK ≈ 82/18)."}
+      - {slug: fact-dominated, kind: static, target_ms: 6000, front_md: "**Dominated hand** (e.g. AK vs AQ): equity?", back_md: "**≈ 70–75 / 25–30** for the dominating hand."}
+      - {slug: fact-overs-vs-unders, kind: static, target_ms: 6000, front_md: "**Two overcards vs. two undercards** (e.g. AK vs 87): equity?", back_md: "**≈ 60/40** for the overcards."}
+      - {slug: fact-aa-vs-random, kind: static, target_ms: 5000, front_md: "**AA vs. a random hand**: equity?", back_md: "**≈ 85%**"}
+      - {slug: fact-suited-bonus, kind: static, target_ms: 5000, front_md: "How much equity does being **suited** add?", back_md: "**≈ 2–3%**"}
+      - {slug: fact-deal-pair, kind: static, target_ms: 5000, front_md: "Chance of being dealt **any pocket pair**?", back_md: "**≈ 6%**, 1 in 17."}
+      - {slug: fact-deal-aa, kind: static, target_ms: 5000, front_md: "Chance of being dealt **AA** (or any specific pair)?", back_md: "**1 in 221** (≈ 0.45%)."}
+      - {slug: fact-deal-suited, kind: static, target_ms: 5000, front_md: "Chance of being dealt **suited** cards?", back_md: "**≈ 23.5%** (4 in 17)."}
+      - {slug: fact-flop-set, kind: static, target_ms: 5000, front_md: "With a pocket pair, chance to **flop a set or better**?", back_md: "**≈ 12%**, 1 in 8.5."}
+      - {slug: fact-flop-flush-draw, kind: static, target_ms: 5000, front_md: "With suited cards, chance to **flop a flush draw**? A **flush**?", back_md: "Flush draw **≈ 11%** · Flush **≈ 0.8%**."}
+      - {slug: fact-flop-pair, kind: static, target_ms: 5000, front_md: "With an unpaired hand, chance to **pair at least one hole card** on the flop?", back_md: "**≈ 32%**, about 1 in 3."}
+      - slug: fact-set-mining-rule
+        kind: static
+        target_ms: 8000
+        front_md: Rule of thumb for **set mining** (calling a raise with a small pair)?
+        back_md: Effective stacks should be **≥ 15–20× the call**. You flop a set only ~12% of the time, so you need to win big when you do.
+
+  # ---------------------------------------------------------------- 6
+  - slug: betting-math
+    section: 6
+    name: Betting Math
+    description: What your bets require. Bluffs, defense, value-to-bluff ratios.
+    cards:
+      - {slug: bluff-breakeven, kind: generator, answer_type: bucket, generator_key: bluff_breakeven, target_ms: 10000}
+      - {slug: mdf, kind: generator, answer_type: bucket, generator_key: mdf, target_ms: 10000}
+      - {slug: value-bluff-ratio, kind: generator, answer_type: bucket, generator_key: value_bluff_ratio, target_ms: 12000}
+      - {slug: bluff-or-check, kind: generator, answer_type: action, generator_key: bluff_or_check, target_ms: 20000}
+      - slug: fact-value-bluff-ratio
+        kind: static
+        target_ms: 8000
+        front_md: On the river you bet **pot**. What share of your betting range can be bluffs?
+        back_md: "**33%** (2 value : 1 bluff), the same number as villain's required call equity: B / (P + 2B)."
+
+  # ---------------------------------------------------------------- 7
+  - slug: implied-odds
+    section: 7
+    name: Implied Odds
+    description: Paying now for money you'll win later.
+    cards:
+      - {slug: implied-required, kind: generator, answer_type: bucket, generator_key: implied_required, target_ms: 25000}
+      - {slug: implied-call, kind: generator, answer_type: action, generator_key: implied_call, target_ms: 30000}
+      - {slug: reverse-implied, kind: generator, answer_type: choice, generator_key: reverse_implied, target_ms: 15000}
+      - slug: fact-implied-formula
+        kind: static
+        target_ms: 10000
+        front_md: How much extra must you win later to justify a call with equity **E**?
+        back_md: "**call / E − (pot + call)**, where pot includes villain's bet."
+
+  # ---------------------------------------------------------------- 8
+  - slug: stack-geometry
+    section: 8
+    name: Stack Geometry
+    description: Stack-to-pot ratio, commitment and multi-street sizing.
+    cards:
+      - {slug: spr-calc, kind: generator, answer_type: bucket, generator_key: spr_calc, target_ms: 8000}
+      - {slug: spr-classify, kind: generator, answer_type: choice, generator_key: spr_classify, target_ms: 8000}
+      - {slug: geometric-sizing, kind: generator, answer_type: bucket, generator_key: geometric_sizing, target_ms: 25000}
+      - {slug: effective-stack, kind: generator, answer_type: bucket, generator_key: effective_stack, target_ms: 8000}
+      - {slug: fact-spr-def, kind: static, target_ms: 5000, front_md: "What is **SPR**?", back_md: "**Effective stack ÷ pot** on the flop."}
+      - {slug: fact-effective-stack, kind: static, target_ms: 5000, front_md: "What is the **effective stack**?", back_md: "The **smaller** of the two stacks. It's the most either player can win or lose."}
+      - slug: fact-spr-bands
+        kind: static
+        target_ms: 8000
+        front_md: What do **low / medium / high SPR** mean for top pair?
+        back_md: |
+          **< 4:** usually committed. Get it in.
+          **4–10:** depends on the board and villain.
+          **> 10:** top pair is a bluff-catcher for big pots.
+
+  # ---------------------------------------------------------------- 9
+  - slug: expected-value
+    section: 9
+    name: Expected Value
+    description: Probability × outcome, summed.
+    cards:
+      - {slug: ev-call, kind: generator, answer_type: bucket, generator_key: ev_call, target_ms: 25000}
+      - {slug: ev-bluff, kind: generator, answer_type: bucket, generator_key: ev_bluff, target_ms: 20000}
+      - {slug: semi-bluff-fold-equity, kind: generator, answer_type: bucket, generator_key: semi_bluff_fold_equity, target_ms: 30000}
+      - {slug: ev-shove, kind: generator, answer_type: action, generator_key: ev_shove, target_ms: 35000}
+      - {slug: fact-ev-def, kind: static, target_ms: 6000, front_md: "Define **EV**.", back_md: "**Σ (probability × outcome)**: the average result if the spot repeated forever."}
+      - {slug: fact-ev-call, kind: static, target_ms: 8000, front_md: "EV of a call?", back_md: "**equity × (pot + call) − call**, where pot already includes villain's bet."}
+      - {slug: fact-ev-bluff, kind: static, target_ms: 8000, front_md: "EV of a pure bluff?", back_md: "**fold% × pot − (1 − fold%) × bet**"}
+
+  # ---------------------------------------------------------------- capstone
+  - slug: mixed-spots
+    section: 11
+    name: Mixed Spots
+    description: Real hands chaining several skills.
+    cards:
+      - {slug: spot-draw-call, kind: generator, answer_type: action, generator_key: spot_draw_call, target_ms: 30000}
+      - {slug: spot-river-bluffcatch, kind: generator, answer_type: action, generator_key: spot_river_bluffcatch, target_ms: 30000}
+      - {slug: spot-flop-commit, kind: generator, answer_type: action, generator_key: spot_flop_commit, target_ms: 35000}
+      - {slug: spot-set-mine, kind: generator, answer_type: action, generator_key: spot_set_mine, target_ms: 25000}

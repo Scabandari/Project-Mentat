@@ -1,10 +1,10 @@
 import { combineReducers, configureStore } from '@reduxjs/toolkit'
 
 import { baseApi } from '@/api/baseApi'
-import settingsReducer from '@/features/settings/settingsSlice'
+import studyReducer from '@/features/study/studySlice'
 
 const rootReducer = combineReducers({
-  settings: settingsReducer,
+  study: studyReducer,
   [baseApi.reducerPath]: baseApi.reducer,
 })
 

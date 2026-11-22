@@ -3,6 +3,8 @@
 import asyncio
 import os
 from collections.abc import AsyncIterator, Iterator
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import asyncpg  # type: ignore[import-untyped]
@@ -47,16 +49,63 @@ def _alembic(*args: str) -> None:
     getattr(command, args[0])(cfg, *args[1:])
 
 
+async def _seed() -> None:
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    from app.scripts.seed import seed_all
+
+    # Own engine: this runs outside the test event loop.
+    engine = create_async_engine(os.environ["DATABASE_URL"])
+    async with async_sessionmaker(engine)() as session:
+        await seed_all(session)
+    await engine.dispose()
+
+
 @pytest.fixture(scope="session", autouse=True)
 def database() -> Iterator[None]:
     asyncio.run(_ensure_database())
     _alembic("downgrade", "base")
     _alembic("upgrade", "head")
+    asyncio.run(_seed())
     yield
 
 
+@pytest.fixture(autouse=True)
+async def clean_user_data() -> AsyncIterator[None]:
+    from sqlalchemy import text
+
+    from app.core.db import SessionLocal
+
+    async with SessionLocal() as session:
+        await session.execute(
+            text("TRUNCATE reviews, problem_instances, study_sessions, user_card_states CASCADE")
+        )
+        await session.execute(text("UPDATE users SET settings = '{}'::jsonb"))
+        await session.commit()
+    yield
+
+
+@dataclass
+class Clock:
+    now: datetime = field(default_factory=lambda: datetime(2026, 11, 21, 15, 0, tzinfo=UTC))
+
+    def advance(self, **kw: float) -> None:
+        self.now += timedelta(**kw)
+
+
 @pytest.fixture
-async def client() -> AsyncIterator[httpx.AsyncClient]:
+def clock() -> Iterator[Clock]:
+    from app.api.deps import get_now
+    from app.main import app
+
+    c = Clock()
+    app.dependency_overrides[get_now] = lambda: c.now
+    yield c
+    app.dependency_overrides.pop(get_now, None)
+
+
+@pytest.fixture
+async def client(clock: Clock) -> AsyncIterator[httpx.AsyncClient]:
     from app.main import app
 
     transport = httpx.ASGITransport(app=app)

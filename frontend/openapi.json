@@ -25,10 +25,1151 @@
           }
         }
       }
+    },
+    "/api/v1/me/settings": {
+      "get": {
+        "tags": [
+          "me"
+        ],
+        "summary": "Get Settings",
+        "operationId": "getSettings",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "me"
+        ],
+        "summary": "Update Settings",
+        "operationId": "updateSettings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/packs": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "List Packs",
+        "operationId": "listPacks",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PackOut"
+                  },
+                  "type": "array",
+                  "title": "Response Listpacks"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/packs/{slug}": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Get Pack",
+        "operationId": "getPack",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/decks/{deck_id}": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Get Deck",
+        "operationId": "getDeck",
+        "parameters": [
+          {
+            "name": "deck_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Deck Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeckDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions": {
+      "post": {
+        "tags": [
+          "study"
+        ],
+        "summary": "Create Session",
+        "operationId": "createSession",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/{session_id}/next": {
+      "post": {
+        "tags": [
+          "study"
+        ],
+        "summary": "Next Problem",
+        "operationId": "nextProblem",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NextOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/{session_id}/end": {
+      "post": {
+        "tags": [
+          "study"
+        ],
+        "summary": "End Session",
+        "operationId": "endSession",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionSummaryOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instances/{instance_id}/answer": {
+      "post": {
+        "tags": [
+          "study"
+        ],
+        "summary": "Answer",
+        "operationId": "answerProblem",
+        "parameters": [
+          {
+            "name": "instance_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Instance Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GradeOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "ActionProblem": {
+        "properties": {
+          "instance_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Instance Id"
+          },
+          "card_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Card Id"
+          },
+          "deck_slug": {
+            "type": "string",
+            "title": "Deck Slug"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "scene": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Scene"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "target_ms": {
+            "type": "integer",
+            "title": "Target Ms"
+          },
+          "is_new": {
+            "type": "boolean",
+            "title": "Is New"
+          },
+          "answer_type": {
+            "type": "string",
+            "const": "action",
+            "title": "Answer Type"
+          },
+          "actions": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "fold",
+                "call",
+                "raise"
+              ]
+            },
+            "type": "array",
+            "title": "Actions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "instance_id",
+          "card_id",
+          "deck_slug",
+          "prompt",
+          "target_ms",
+          "is_new",
+          "answer_type",
+          "actions"
+        ],
+        "title": "ActionProblem"
+      },
+      "AnswerIn": {
+        "properties": {
+          "response": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "fold",
+                  "call",
+                  "raise"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response"
+          },
+          "self_rating": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "again",
+                  "hard",
+                  "good",
+                  "easy"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Self Rating"
+          },
+          "latency_ms": {
+            "type": "integer",
+            "maximum": 3600000.0,
+            "minimum": 0.0,
+            "title": "Latency Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "latency_ms"
+        ],
+        "title": "AnswerIn"
+      },
+      "Bucket": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "lo": {
+            "type": "number",
+            "title": "Lo"
+          },
+          "hi": {
+            "type": "number",
+            "title": "Hi"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "lo",
+          "hi"
+        ],
+        "title": "Bucket"
+      },
+      "BucketProblem": {
+        "properties": {
+          "instance_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Instance Id"
+          },
+          "card_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Card Id"
+          },
+          "deck_slug": {
+            "type": "string",
+            "title": "Deck Slug"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "scene": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Scene"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "target_ms": {
+            "type": "integer",
+            "title": "Target Ms"
+          },
+          "is_new": {
+            "type": "boolean",
+            "title": "Is New"
+          },
+          "answer_type": {
+            "type": "string",
+            "const": "bucket",
+            "title": "Answer Type"
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "percent",
+              "count",
+              "ratio",
+              "chips"
+            ],
+            "title": "Unit"
+          },
+          "buckets": {
+            "items": {
+              "$ref": "#/components/schemas/Bucket"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "minItems": 5,
+            "title": "Buckets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "instance_id",
+          "card_id",
+          "deck_slug",
+          "prompt",
+          "target_ms",
+          "is_new",
+          "answer_type",
+          "unit",
+          "buckets"
+        ],
+        "title": "BucketProblem"
+      },
+      "Choice": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label"
+        ],
+        "title": "Choice"
+      },
+      "ChoiceProblem": {
+        "properties": {
+          "instance_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Instance Id"
+          },
+          "card_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Card Id"
+          },
+          "deck_slug": {
+            "type": "string",
+            "title": "Deck Slug"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "scene": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Scene"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "target_ms": {
+            "type": "integer",
+            "title": "Target Ms"
+          },
+          "is_new": {
+            "type": "boolean",
+            "title": "Is New"
+          },
+          "answer_type": {
+            "type": "string",
+            "const": "choice",
+            "title": "Answer Type"
+          },
+          "choices": {
+            "items": {
+              "$ref": "#/components/schemas/Choice"
+            },
+            "type": "array",
+            "title": "Choices"
+          }
+        },
+        "type": "object",
+        "required": [
+          "instance_id",
+          "card_id",
+          "deck_slug",
+          "prompt",
+          "target_ms",
+          "is_new",
+          "answer_type",
+          "choices"
+        ],
+        "title": "ChoiceProblem"
+      },
+      "DeckDetailOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "section": {
+            "type": "integer",
+            "title": "Section"
+          },
+          "card_count": {
+            "type": "integer",
+            "title": "Card Count"
+          },
+          "due_count": {
+            "type": "integer",
+            "title": "Due Count"
+          },
+          "new_count": {
+            "type": "integer",
+            "title": "New Count"
+          },
+          "mastery": {
+            "type": "number",
+            "title": "Mastery"
+          },
+          "locked": {
+            "type": "boolean",
+            "title": "Locked"
+          },
+          "has_lesson": {
+            "type": "boolean",
+            "title": "Has Lesson"
+          },
+          "lesson_md": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lesson Md"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "description",
+          "section",
+          "card_count",
+          "due_count",
+          "new_count",
+          "mastery",
+          "locked",
+          "has_lesson",
+          "lesson_md"
+        ],
+        "title": "DeckDetailOut"
+      },
+      "DeckOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "section": {
+            "type": "integer",
+            "title": "Section"
+          },
+          "card_count": {
+            "type": "integer",
+            "title": "Card Count"
+          },
+          "due_count": {
+            "type": "integer",
+            "title": "Due Count"
+          },
+          "new_count": {
+            "type": "integer",
+            "title": "New Count"
+          },
+          "mastery": {
+            "type": "number",
+            "title": "Mastery"
+          },
+          "locked": {
+            "type": "boolean",
+            "title": "Locked"
+          },
+          "has_lesson": {
+            "type": "boolean",
+            "title": "Has Lesson"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "description",
+          "section",
+          "card_count",
+          "due_count",
+          "new_count",
+          "mastery",
+          "locked",
+          "has_lesson"
+        ],
+        "title": "DeckOut"
+      },
+      "DeckStat": {
+        "properties": {
+          "deck_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Deck Id"
+          },
+          "deck_name": {
+            "type": "string",
+            "title": "Deck Name"
+          },
+          "reviews": {
+            "type": "integer",
+            "title": "Reviews"
+          },
+          "accuracy": {
+            "type": "number",
+            "title": "Accuracy"
+          },
+          "median_latency_ms": {
+            "type": "integer",
+            "title": "Median Latency Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deck_id",
+          "deck_name",
+          "reviews",
+          "accuracy",
+          "median_latency_ms"
+        ],
+        "title": "DeckStat"
+      },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "details": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorBody"
+      },
+      "ErrorOut": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorOut"
+      },
+      "FlipProblem": {
+        "properties": {
+          "instance_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Instance Id"
+          },
+          "card_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Card Id"
+          },
+          "deck_slug": {
+            "type": "string",
+            "title": "Deck Slug"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "scene": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Scene"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "target_ms": {
+            "type": "integer",
+            "title": "Target Ms"
+          },
+          "is_new": {
+            "type": "boolean",
+            "title": "Is New"
+          },
+          "answer_type": {
+            "type": "string",
+            "const": "flip",
+            "title": "Answer Type"
+          },
+          "back_md": {
+            "type": "string",
+            "title": "Back Md"
+          }
+        },
+        "type": "object",
+        "required": [
+          "instance_id",
+          "card_id",
+          "deck_slug",
+          "prompt",
+          "target_ms",
+          "is_new",
+          "answer_type",
+          "back_md"
+        ],
+        "title": "FlipProblem"
+      },
+      "GradeOut": {
+        "properties": {
+          "instance_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Instance Id"
+          },
+          "is_correct": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Correct"
+          },
+          "rating": {
+            "type": "string",
+            "enum": [
+              "again",
+              "hard",
+              "good",
+              "easy"
+            ],
+            "title": "Rating"
+          },
+          "correct_response": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "fold",
+                  "call",
+                  "raise"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correct Response"
+          },
+          "exact_answer": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exact Answer"
+          },
+          "back_md": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Back Md"
+          },
+          "shortcut": {
+            "type": "string",
+            "title": "Shortcut"
+          },
+          "explanation_md": {
+            "type": "string",
+            "title": "Explanation Md"
+          },
+          "latency_ms": {
+            "type": "integer",
+            "title": "Latency Ms"
+          },
+          "target_ms": {
+            "type": "integer",
+            "title": "Target Ms"
+          },
+          "next_due": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Due"
+          }
+        },
+        "type": "object",
+        "required": [
+          "instance_id",
+          "is_correct",
+          "rating",
+          "correct_response",
+          "exact_answer",
+          "back_md",
+          "shortcut",
+          "explanation_md",
+          "latency_ms",
+          "target_ms",
+          "next_due"
+        ],
+        "title": "GradeOut"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
       "HealthOut": {
         "properties": {
           "status": {
@@ -59,6 +1200,540 @@
           "version"
         ],
         "title": "HealthOut"
+      },
+      "NextOut": {
+        "properties": {
+          "problem": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/BucketProblem"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ChoiceProblem"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ActionProblem"
+                  },
+                  {
+                    "$ref": "#/components/schemas/FlipProblem"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "answer_type",
+                  "mapping": {
+                    "action": "#/components/schemas/ActionProblem",
+                    "bucket": "#/components/schemas/BucketProblem",
+                    "choice": "#/components/schemas/ChoiceProblem",
+                    "flip": "#/components/schemas/FlipProblem"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem"
+          },
+          "queue": {
+            "$ref": "#/components/schemas/QueueCounts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "problem",
+          "queue"
+        ],
+        "title": "NextOut"
+      },
+      "PackDetailOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "deck_count": {
+            "type": "integer",
+            "title": "Deck Count"
+          },
+          "due_count": {
+            "type": "integer",
+            "title": "Due Count"
+          },
+          "new_count": {
+            "type": "integer",
+            "title": "New Count"
+          },
+          "new_today": {
+            "type": "integer",
+            "title": "New Today"
+          },
+          "decks": {
+            "items": {
+              "$ref": "#/components/schemas/DeckOut"
+            },
+            "type": "array",
+            "title": "Decks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "description",
+          "deck_count",
+          "due_count",
+          "new_count",
+          "new_today",
+          "decks"
+        ],
+        "title": "PackDetailOut"
+      },
+      "PackOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "deck_count": {
+            "type": "integer",
+            "title": "Deck Count"
+          },
+          "due_count": {
+            "type": "integer",
+            "title": "Due Count"
+          },
+          "new_count": {
+            "type": "integer",
+            "title": "New Count"
+          },
+          "new_today": {
+            "type": "integer",
+            "title": "New Today"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "description",
+          "deck_count",
+          "due_count",
+          "new_count",
+          "new_today"
+        ],
+        "title": "PackOut"
+      },
+      "QueueCounts": {
+        "properties": {
+          "due": {
+            "type": "integer",
+            "title": "Due"
+          },
+          "new": {
+            "type": "integer",
+            "title": "New"
+          },
+          "reviewed": {
+            "type": "integer",
+            "title": "Reviewed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "due",
+          "new",
+          "reviewed"
+        ],
+        "title": "QueueCounts"
+      },
+      "Scene": {
+        "properties": {
+          "hero": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Hero",
+            "default": []
+          },
+          "board": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Board",
+            "default": []
+          },
+          "pot": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pot"
+          },
+          "bet": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bet"
+          },
+          "hero_stack": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hero Stack"
+          },
+          "villain_stack": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Villain Stack"
+          },
+          "street": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "preflop",
+                  "flop",
+                  "turn",
+                  "river"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Street"
+          }
+        },
+        "type": "object",
+        "title": "Scene"
+      },
+      "SessionIn": {
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "review",
+              "drill",
+              "learn"
+            ],
+            "title": "Mode",
+            "default": "review"
+          },
+          "deck_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deck Ids"
+          },
+          "new_limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Limit"
+          }
+        },
+        "type": "object",
+        "title": "SessionIn"
+      },
+      "SessionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "review",
+              "drill",
+              "learn"
+            ],
+            "title": "Mode"
+          },
+          "deck_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Deck Ids"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "due_count": {
+            "type": "integer",
+            "title": "Due Count"
+          },
+          "new_count": {
+            "type": "integer",
+            "title": "New Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "mode",
+          "deck_ids",
+          "started_at",
+          "due_count",
+          "new_count"
+        ],
+        "title": "SessionOut"
+      },
+      "SessionSummaryOut": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "review",
+              "drill",
+              "learn"
+            ],
+            "title": "Mode"
+          },
+          "reviewed": {
+            "type": "integer",
+            "title": "Reviewed"
+          },
+          "correct": {
+            "type": "integer",
+            "title": "Correct"
+          },
+          "accuracy": {
+            "type": "number",
+            "title": "Accuracy"
+          },
+          "median_latency_ms": {
+            "type": "integer",
+            "title": "Median Latency Ms"
+          },
+          "duration_s": {
+            "type": "integer",
+            "title": "Duration S"
+          },
+          "by_deck": {
+            "items": {
+              "$ref": "#/components/schemas/DeckStat"
+            },
+            "type": "array",
+            "title": "By Deck"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "mode",
+          "reviewed",
+          "correct",
+          "accuracy",
+          "median_latency_ms",
+          "duration_s",
+          "by_deck"
+        ],
+        "title": "SessionSummaryOut"
+      },
+      "SettingsIn": {
+        "properties": {
+          "stakes_format": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "live",
+                  "online"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stakes Format"
+          },
+          "daily_new_limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily New Limit"
+          },
+          "show_timer": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Timer"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          }
+        },
+        "type": "object",
+        "title": "SettingsIn"
+      },
+      "SettingsOut": {
+        "properties": {
+          "stakes_format": {
+            "type": "string",
+            "enum": [
+              "live",
+              "online"
+            ],
+            "title": "Stakes Format",
+            "default": "online"
+          },
+          "daily_new_limit": {
+            "type": "integer",
+            "title": "Daily New Limit",
+            "default": 10
+          },
+          "show_timer": {
+            "type": "boolean",
+            "title": "Show Timer",
+            "default": true
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone",
+            "default": "America/Toronto"
+          }
+        },
+        "type": "object",
+        "title": "SettingsOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       }
     }
   }

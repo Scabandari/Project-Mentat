@@ -12,7 +12,7 @@
 3. **Speed is part of correctness.** Every review records latency, and mastery requires accuracy *and* speed.
 4. **Approximate answers are valid.** Mental math is about estimates. The default numeric answer is a **5-choice bucket** (e.g. "30–35%"), not typed input.
 5. **Deterministic answer keys.** Every math answer comes from tested code. LLMs never compute or grade answers.
-6. **Server is the source of truth.** Problems are generated and graded server-side; the client never sees the answer key before answering.
+6. **Server is the source of truth.** Problems are generated and graded server-side; the client never sees the answer key of an auto-graded card before answering. (Self-graded `flip` cards ship their back with the problem, because there is nothing to protect.)
 
 ---
 
@@ -225,7 +225,7 @@ Conventions: plain resources (no success envelope); errors are `{"error": {"code
 | GET | `/packs/{slug}` | `PackDetailOut` (with decks) |
 | GET | `/decks/{id}` | `DeckOut` |
 | POST | `/sessions` | `SessionOut`. Body: `{mode, deck_ids?, new_limit?}` |
-| POST | `/sessions/{id}/next` | `ProblemOut`, or `204` when queue empty |
+| POST | `/sessions/{id}/next` | `NextOut`: `{problem: ProblemOut \| null, queue: {due, new, reviewed}}`. `problem: null` = queue empty. Idempotent until the pending problem is answered. |
 | POST | `/instances/{id}/answer` | `GradeOut`. Body: `AnswerIn` |
 | POST | `/sessions/{id}/end` | `SessionSummaryOut` |
 | GET | `/stats/overview` | `StatsOverviewOut` |
@@ -233,7 +233,7 @@ Conventions: plain resources (no success envelope); errors are `{"error": {"code
 | GET | `/reviews?cursor=` | `Page[ReviewOut]` |
 | POST | `/instances/{id}/tutor` | `TutorOut` (LLM, M2) |
 
-`next` is a POST because it creates an instance.
+`next` is a POST because it creates an instance. It returns a wrapper (not `204`) so the client always gets queue counts for the progress bar.
 
 ### Response models (Pydantic)
 ```python
@@ -403,7 +403,7 @@ Full card-by-card curriculum in **[CURRICULUM.md](CURRICULUM.md)**: 11 sections 
 | Milestone | Scope |
 |---|---|
 | **M0: Infra** ✅ | Compose (db/api/web), Makefile, Alembic baseline, health check, OpenAPI → RTK Query codegen, CI. |
-| **M1: Engine** | Models, seeding, FSRS, sessions, static `flip` cards end-to-end. |
+| **M1: Engine** ✅ | Models, seeding, FSRS, sessions, static `flip` cards end-to-end. |
 | **M2: Generators** | Generator registry, `bucket` grading, live/online rendering, sections 0–4, lessons, result/explain screen, tutor chain. |
 | **M3: Betting math** | Sections 5–9, capstone, Drill mode, stats. |
 | **M4: Generic learning** | LLM deck builder, CSV import, user-created decks. |

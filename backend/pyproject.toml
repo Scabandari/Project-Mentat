@@ -7,8 +7,10 @@ dependencies = [
     "alembic>=1.20.1",
     "asyncpg>=0.32.0",
     "fastapi>=0.165.0",
+    "fsrs>=6.3.3",
     "pydantic>=2",
     "pydantic-settings>=2.16.3",
+    "pyyaml>=6.0.4",
     "sqlalchemy[asyncio]>=2",
     "structlog>=26.1.0",
     "uuid-utils>=1.2.0",
@@ -22,6 +24,7 @@ dev = [
     "pytest>=9.2.0",
     "pytest-asyncio>=1.5.0",
     "ruff>=0.17.6",
+    "types-pyyaml>=6.0.12.20261113",
 ]
 
 [tool.ruff]
