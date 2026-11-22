@@ -23,6 +23,9 @@
 | Game scope | NLHE only (cash + generic). No ICM/PLO in v1. |
 | Users | Single user in v1. **Every user-owned row has `user_id`** (one seeded default user), so adding logins later is additive, not a migration nightmare. |
 | Answer input | 5 buckets by default; `choice`, `action`, `flip` also supported. |
+| Player level | Beginner. Every deck has a **lesson** (Learn mode), and each card has a **difficulty ramp** (L1–L3) that rises with FSRS stability. |
+| Stakes format | **User toggle: `live` / `online`**, stored in `users.settings.stakes_format`. Generators render $ amounts with chip-rounded, uneven sizes (live) or bb + pot-% sizes (online). Same math, different presentation. |
+| Preflop ranges | **Separate pack** (`preflop-ranges`), v2, needs the `range` answer type. |
 | Offline | Not in v1. PWA shell + offline queue can come later. |
 | Hosting | Self-hosted on Ryan's home server via `make prod-up`. v1 served on `http://localhost:8473` (nginx; override with `HTTP_PORT`). Subdomain + TLS is a follow-up (see §3 Infra). |
 
@@ -118,7 +121,8 @@
 @register("pot_odds_required_equity")
 class PotOddsRequiredEquity(Generator):
     answer_type = "bucket"
-    def generate(self, rng: Random, params: Params) -> Instance: ...
+    def generate(self, rng: Random, params: Params, ctx: GenContext) -> Instance: ...
+    # ctx.stakes_format: "live" | "online";  ctx.level: 1–3
 ```
 - Pure, seeded, deterministic: same seed + params → same instance (reproducible bugs, testable).
 - Each generator ships property tests that check the answer key against an independent brute-force computation where possible.
@@ -166,7 +170,8 @@ packs
   id PK, slug UNIQUE, name, description, version, created_at, updated_at
 
 decks
-  id PK, pack_id FK→packs, slug, name, description, tier SMALLINT, position SMALLINT
+  id PK, pack_id FK→packs, slug, name, description, lesson_md,
+  section SMALLINT, position SMALLINT, unlock_after_deck_id FK NULL
   UNIQUE(pack_id, slug)
 
 cards
@@ -180,7 +185,8 @@ cards
 user_card_states                              -- FSRS state per user×card
   user_id FK, card_id FK, PK(user_id, card_id)
   state ENUM(new, learning, review, relearning), stability FLOAT, difficulty FLOAT,
-  due TIMESTAMPTZ, last_review TIMESTAMPTZ NULL, reps INT, lapses INT
+  due TIMESTAMPTZ, last_review TIMESTAMPTZ NULL, reps INT, lapses INT,
+  level SMALLINT DEFAULT 1                    -- difficulty ramp L1–L3
   INDEX(user_id, due)
 
 study_sessions
@@ -213,6 +219,8 @@ Conventions: plain resources (no success envelope); errors are `{"error": {"code
 | Method | Path | Returns |
 |---|---|---|
 | GET | `/health` | `{status, db}` |
+| GET | `/me/settings` | `SettingsOut` |
+| PATCH | `/me/settings` | `SettingsOut`. Body: `SettingsIn` (partial) |
 | GET | `/packs` | `PackOut[]` |
 | GET | `/packs/{slug}` | `PackDetailOut` (with decks) |
 | GET | `/decks/{id}` | `DeckOut` |
@@ -243,11 +251,22 @@ class DeckOut(BaseModel):
     slug: str
     name: str
     description: str
-    tier: int
+    section: int
+    locked: bool
     card_count: int
     due_count: int
     new_count: int
     mastery: float  # 0–1, share of cards in review state with stability > threshold
+
+class SettingsOut(BaseModel):
+    stakes_format: Literal["live", "online"] = "online"
+    daily_new_limit: int = 10
+    show_timer: bool = True
+
+class SettingsIn(BaseModel):
+    stakes_format: Literal["live", "online"] | None = None
+    daily_new_limit: int | None = Field(default=None, ge=0, le=100)
+    show_timer: bool | None = None
 
 class PackOut(BaseModel):
     id: UUID
@@ -368,36 +387,10 @@ class TutorOut(BaseModel):
 
 ## 7. Poker Math Pack (v1 content)
 
-### Tier 1: Foundations
-1. **Outs counting**: hero + board → clean outs (FD, OESD, gutshot, overcards, combo draws, dirty outs).
-2. **Outs → equity**: rule of 2 and 4 (with the big-draw correction) vs. exact.
-3. **Pot odds**: pot + bet → required equity, `call / (pot + bet + call)`.
-4. **Ratio ↔ percentage**: 3:1 ↔ 25% (speed drill).
-5. **Call/fold**: draw + pot odds → action.
-
-### Tier 2: Betting math
-6. **Bluff breakeven**: `B / (P + B)`.
-7. **MDF**: `P / (P + B)`.
-8. **Implied odds**: extra needed on later streets.
-9. **Reverse implied odds**.
-10. **SPR**: compute + classify.
-11. **Geometric sizing**: per-street size to get stacks in by the river.
-12. **Semi-bluff EV**: fold equity + equity when called.
-
-### Tier 3: Combinatorics & ranges
-13. **Hand combos**: 6 / 4 / 12, with card removal.
-14. **Blockers**: remaining combos given board/hero.
-15. **Value:bluff ratios**.
-16. **Preflop matchups**: canonical equities.
-17. **Hand vs. range equity** (v2).
-
-### Tier 4 (v2+)
-18. Multi-outcome EV · 19. Polarised river sizing · 20. Variance / bankroll.
-
----
+Full card-by-card curriculum in **[CURRICULUM.md](CURRICULUM.md)**: 11 sections (hand basics → number fluency → combinatorics → outs → pot odds → preflop → betting math → implied odds → stack geometry → EV → range vs. range) plus a mixed-spot capstone. 58 cards, ~45 generated.
 
 ## 8. UI (mobile-first)
-- **Home**: due count, streak, Review / Drill, weakest decks.
+- **Home**: due count, streak, Review / Drill, weakest decks, **Live / Online toggle**.
 - **Card**: rendered cards + board, pot/bet chips, **5 large bucket buttons** (thumb-reachable), timer bar against target.
 - **Result**: correct bucket highlighted, exact value, time, shortcut, expandable explanation, "Explain differently" (tutor).
 - **Decks**, **Stats**.
@@ -411,10 +404,10 @@ class TutorOut(BaseModel):
 |---|---|
 | **M0: Infra** ✅ | Compose (db/api/web), Makefile, Alembic baseline, health check, OpenAPI → RTK Query codegen, CI. |
 | **M1: Engine** | Models, seeding, FSRS, sessions, static `flip` cards end-to-end. |
-| **M2: Generators** | Generator registry, `bucket` grading, Tier 1 decks, result/explain screen, tutor chain. |
-| **M3: Betting math** | Tier 2, Drill mode, stats. |
-| **M4: Combinatorics + generic** | Tier 3, card-removal engine, LLM deck builder, CSV import. |
-| **v2** | Auth → subdomain via Cloudflare Tunnel, PWA/offline, hand-vs-range, Tier 4. |
+| **M2: Generators** | Generator registry, `bucket` grading, live/online rendering, sections 0–4, lessons, result/explain screen, tutor chain. |
+| **M3: Betting math** | Sections 5–9, capstone, Drill mode, stats. |
+| **M4: Generic learning** | LLM deck builder, CSV import, user-created decks. |
+| **v2** | Auth → subdomain via Cloudflare Tunnel, PWA/offline, section 10, `preflop-ranges` pack. |
 
 ---
 
