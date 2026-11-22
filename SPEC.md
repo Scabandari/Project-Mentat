@@ -1,6 +1,6 @@
-# Project Mentat — Spec (v0.1 draft)
+# Project Mentat — Spec (v0.2 draft)
 
-> A learning app built to learn anything, starting with **poker mathematics**.
+> A learning app built to learn anything, starting with **poker mathematics (No-Limit Texas Hold'em)**.
 > The goal is fluency: getting the right number in your head, quickly, at the table.
 
 ---
@@ -9,129 +9,413 @@
 
 1. **Generic engine, domain packs.** The core (cards, decks, scheduling, review, stats) knows nothing about poker. Poker is the first *content pack*.
 2. **Generated problems beat static cards.** Static cards are fine for facts ("How many combos of AK?"). Computation skills need *procedurally generated* problems: new numbers every time, so you learn the method instead of memorising answers.
-3. **Speed is part of correctness.** At the table, a right answer that takes 40 s is a wrong answer. Every review records latency, and mastery requires accuracy *and* speed.
-4. **Approximate answers are valid.** Mental math is about estimates. Numeric answers are graded with tolerance bands, not exact match.
-5. **Local-first, mobile-first.** Study happens on a phone in spare minutes. It works offline, and sync comes later.
+3. **Speed is part of correctness.** Every review records latency, and mastery requires accuracy *and* speed.
+4. **Approximate answers are valid.** Mental math is about estimates. The default numeric answer is a **5-choice bucket** (e.g. "30–35%"), not typed input.
+5. **Deterministic answer keys.** Every math answer comes from tested code. LLMs never compute or grade answers.
+6. **Server is the source of truth.** Problems are generated and graded server-side; the client never sees the answer key before answering.
 
 ---
 
-## 2. Platform & Stack (decision)
+## 2. Decisions
 
-| Concern | Choice | Why |
-|---|---|---|
-| App | **React + TypeScript + Vite, as a PWA** | Runs on phone and desktop, installable, offline. One codebase. |
-| Storage | **IndexedDB via Dexie** | Local-first, no backend needed for v1. |
-| Scheduling | **FSRS** (`ts-fsrs`) | Current best-in-class spaced-repetition algorithm, better than SM-2/Anki defaults. |
-| Poker eval | TS hand evaluator + Monte Carlo/exact enumeration in a Web Worker | Equity for generated problems computed client-side. |
-| Tests | Vitest | Generator correctness is critical, because a wrong answer key trains wrong instincts. |
-| Sync (later) | Supabase or a tiny API + Postgres | Deferred to v2. |
-
-Alternatives considered: React Native/Expo (better native feel, slower to iterate, overkill for v1); Python CLI (fast to build, but you won't study on it on the metro).
-
----
-
-## 3. Core Engine
-
-### 3.1 Concepts
-- **Pack**: a domain (e.g. `poker-math`). Contains decks and generators.
-- **Deck**: an ordered set of skills/topics (e.g. "Pot Odds").
-- **Card**: the unit of scheduling. Either:
-  - **Static card**: fixed prompt/answer.
-  - **Generator card**: a *template* that produces a fresh **problem instance** on each review. FSRS schedules the template (the skill), not the instance.
-- **Review**: one attempt. Stores card id, instance seed, user answer, correct answer, grade, latency, timestamp.
-
-### 3.2 Answer types
-| Type | Grading |
+| Area | Decision |
 |---|---|
-| `flip` | Self-graded (Again / Hard / Good / Easy), classic flashcard |
-| `numeric` | Auto-graded with tolerance (e.g. ±3 percentage points = Good, ±6 = Hard, else Again) |
-| `choice` | Multiple choice, auto-graded |
-| `action` | Choose Call / Fold / Raise, graded against EV |
-| `range` (v2) | Select hands on a 13×13 grid |
-
-Auto-grade → FSRS rating mapping also factors in latency against a per-card **target time** (e.g. correct but more than 2× target time downgrades Good to Hard).
-
-### 3.3 Study modes
-- **Review**: FSRS due queue (default daily mode).
-- **Drill**: unscheduled rapid-fire on one deck, with a timer. Doesn't affect scheduling, or affects it lightly (configurable).
-- **Learn**: introduces new cards with an explanation/worked example first.
-- **Explain**: every card has an "Explain" view showing the worked solution and the mental shortcut, not just the answer.
-
-### 3.4 Content authoring
-- Packs defined as **TypeScript modules** (generators) + **YAML/Markdown** (static cards, explanations).
-- Import CSV/Anki (`.apkg`) for non-poker decks (v2).
-
-### 3.5 Stats
-- Per-deck accuracy, median latency, retention, streak.
-- **Calibration chart** for numeric cards: your estimate vs. truth (shows whether you overestimate equity, etc.).
-- Weakest-skills list feeding Drill mode.
+| Game scope | NLHE only (cash + generic). No ICM/PLO in v1. |
+| Users | Single user in v1. **Every user-owned row has `user_id`** (one seeded default user), so adding logins later is additive, not a migration nightmare. |
+| Answer input | 5 buckets by default; `choice`, `action`, `flip` also supported. |
+| Offline | Not in v1. PWA shell + offline queue can come later. |
 
 ---
 
-## 4. Poker Math Pack (v1 content)
+## 3. Stack
 
-Ordered roughly by dependency. Each item = one or more generator cards.
+### Backend
+| Concern | Choice |
+|---|---|
+| Runtime / deps | Python 3.12, **uv** |
+| API | **FastAPI** |
+| Validation / settings | **Pydantic v2**, `pydantic-settings` |
+| ORM | **SQLAlchemy 2.0 (async)** + `asyncpg` |
+| Migrations | **Alembic** (autogenerate) |
+| DB | **Postgres 16** |
+| Scheduling | `fsrs` (py-fsrs) |
+| Poker eval | `eval7` (Cython, fast exact enumeration / Monte Carlo) |
+| LLM | **LangChain** (`langchain-anthropic`), isolated in `app/llm/` |
+| Quality | `ruff` (lint + format), `mypy`, `pytest` + `pytest-asyncio`, `httpx` test client |
+| Logging | `structlog`, JSON in prod |
 
-### Tier 1 — Foundations
-1. **Outs counting**: show hero hand + board, count clean outs (flush draws, OESD, gutshot, overcards, combo draws, discounted/dirty outs).
-2. **Outs → equity**: rule of 2 and 4 (and the "4x minus (outs − 8)" correction for big draws) vs. exact.
-3. **Pot odds**: pot + bet → required equity % (`call / (pot + bet + call)`).
-4. **Ratio ↔ percentage conversions**: 3:1 ↔ 25%, etc. (pure speed drill).
-5. **Call/fold decisions**: given draw + pot odds → action.
+### Frontend
+| Concern | Choice |
+|---|---|
+| Build / deps | **Vite**, **pnpm** |
+| UI | **React 18 + TypeScript (strict)** |
+| Components | **shadcn/ui** (Radix primitives) |
+| Styling | **Tailwind CSS**. shadcn is built on Tailwind; adding runtime CSS-in-JS (styled-components/emotion) would fight it. Use `cva` + `cn()` for variants. |
+| State | **Redux Toolkit slices** for client/UI state (session flow, timer, settings) |
+| Server state | **RTK Query**, with endpoints **generated from FastAPI's OpenAPI** (`@rtk-query/codegen-openapi`). No hand-written API types. |
+| Routing | React Router |
+| Quality | ESLint, Prettier, Vitest + Testing Library |
 
-### Tier 2 — Betting math
-6. **Bluff breakeven / fold equity**: bet B into pot P → required fold % (`B / (P + B)`).
-7. **Minimum Defense Frequency (MDF)**: `P / (P + B)`.
-8. **Implied odds**: how much more must you win on later streets to justify a call.
-9. **Reverse implied odds** (conceptual + numeric).
-10. **SPR**: compute and classify (low/medium/high commitment).
-11. **Geometric bet sizing**: size per street to get stacks in by the river.
+### Infra
+| Concern | Choice |
+|---|---|
+| Orchestration | **Docker Compose**: `docker-compose.yml` (dev) + `docker-compose.prod.yml` (override) |
+| Dev | `db`, `api` (uvicorn `--reload`, source mounted), `web` (Vite dev server, proxies `/api` → `api`) |
+| Prod | `db`, `api` (uvicorn workers), `nginx` (serves built SPA, proxies `/api`, gzip, cache headers) |
+| Config | `.env` (gitignored) + `.env.example` |
+| Tasks | **Makefile** (`make help`) |
+| CI | GitHub Actions: `make check` (lint, typecheck, test) on PR |
+| Hooks | `pre-commit` (ruff, prettier, eslint) |
+
+### Repo layout
+```
+.
+├── backend/
+│   ├── app/
+│   │   ├── api/v1/          # routers
+│   │   ├── core/            # settings, db session, logging
+│   │   ├── models/          # SQLAlchemy models
+│   │   ├── schemas/         # Pydantic request/response models
+│   │   ├── services/        # scheduling, grading, sessions
+│   │   ├── generators/      # generator registry + poker generators
+│   │   ├── content/         # pack definitions (YAML + md explanations)
+│   │   ├── llm/             # LangChain chains (tutor, deck builder)
+│   │   └── scripts/         # seed, export_openapi
+│   ├── alembic/
+│   ├── tests/
+│   ├── pyproject.toml
+│   └── Dockerfile
+├── frontend/
+│   ├── src/{app,features,components/ui,api,lib}
+│   ├── package.json
+│   └── Dockerfile
+├── nginx/nginx.conf
+├── docker-compose.yml
+├── docker-compose.prod.yml
+├── .env.example
+└── Makefile
+```
+
+---
+
+## 4. Core Engine
+
+### 4.1 Concepts
+- **Pack**: a domain (`poker-math`).
+- **Deck**: a skill/topic within a pack ("Pot Odds").
+- **Card**: the unit of scheduling.
+  - **Static**: fixed front/back.
+  - **Generator**: references a registered generator (`generator_key`) plus difficulty `params`. Produces a fresh **problem instance** each review. FSRS schedules the card (the skill), not the instance.
+- **Problem instance**: one rendered problem, with its seed, prompt payload and hidden answer key.
+- **Review**: one graded attempt on an instance.
+- **Session**: a sitting (Review / Drill / Learn).
+
+### 4.2 Generators
+```python
+@register("pot_odds_required_equity")
+class PotOddsRequiredEquity(Generator):
+    answer_type = "bucket"
+    def generate(self, rng: Random, params: Params) -> Instance: ...
+```
+- Pure, seeded, deterministic: same seed + params → same instance (reproducible bugs, testable).
+- Each generator ships property tests that check the answer key against an independent brute-force computation where possible.
+- Each generator provides a `shortcut` (one-liner) and an `explanation_md` (worked solution) built from the instance.
+
+### 4.3 Answer types & grading
+| Type | Input | Grading |
+|---|---|---|
+| `bucket` | 5 contiguous buckets | Correct bucket only |
+| `choice` | N options | Exact |
+| `action` | Fold / Call / Raise | Against EV-maximising action |
+| `flip` | Reveal → self-rate | User picks Again/Hard/Good/Easy |
+
+**Bucket construction:** width set per card (e.g. 5 pts for equity, 1 for outs), boundaries on round numbers, half-open `[lo, hi)`. The correct bucket's position is randomised across slots 0–4 so position is never a tell; clamp at domain edges (0%/100%).
+
+**Rating (auto-graded types):**
+| Result | Rating |
+|---|---|
+| Wrong | Again |
+| Correct, latency > 2× target | Hard |
+| Correct, latency ≤ 2× target | Good |
+| Correct, latency ≤ 0.5× target | Easy |
+
+### 4.4 Study modes
+- **Review**: FSRS due queue + capped new cards per day.
+- **Drill**: rapid-fire on chosen decks, timer visible, **logged but does not update FSRS** (prevents cramming from distorting intervals).
+- **Learn**: introduces new cards with the worked example first.
+
+### 4.5 LLM usage (LangChain)
+Scoped and optional; the app works fully without it.
+- **Tutor** (M2): "Explain differently" on a result. The chain receives the deterministic solution + user's answer and only *rephrases or teaches*; it never recomputes.
+- **Deck builder** (M4): turn pasted notes/URL into static cards for non-poker topics, then a review screen before saving.
+
+---
+
+## 5. Data Model (Postgres)
+
+All PKs `uuid` (v7 via `uuid-utils` for index locality). All tables have `created_at`; mutable ones have `updated_at`. JSONB for polymorphic payloads, validated by Pydantic at the boundary.
+
+```
+users
+  id PK, email NULL UNIQUE, display_name, settings JSONB, created_at
+
+packs
+  id PK, slug UNIQUE, name, description, version, created_at, updated_at
+
+decks
+  id PK, pack_id FK→packs, slug, name, description, tier SMALLINT, position SMALLINT
+  UNIQUE(pack_id, slug)
+
+cards
+  id PK, deck_id FK→decks, slug, kind ENUM(static, generator),
+  answer_type ENUM(bucket, choice, action, flip),
+  generator_key NULL, params JSONB,          -- generator cards
+  front_md NULL, back_md NULL,               -- static cards
+  target_ms INT, is_active BOOL, position SMALLINT
+  UNIQUE(deck_id, slug)
+
+user_card_states                              -- FSRS state per user×card
+  user_id FK, card_id FK, PK(user_id, card_id)
+  state ENUM(new, learning, review, relearning), stability FLOAT, difficulty FLOAT,
+  due TIMESTAMPTZ, last_review TIMESTAMPTZ NULL, reps INT, lapses INT
+  INDEX(user_id, due)
+
+study_sessions
+  id PK, user_id FK, mode ENUM(review, drill, learn), deck_ids UUID[],
+  started_at, ended_at NULL
+
+problem_instances
+  id PK, user_id FK, card_id FK, session_id FK, seed BIGINT,
+  prompt JSONB,          -- what the client renders
+  answer_key JSONB,      -- never serialised to client before answer
+  choices JSONB NULL, answered_at NULL, created_at
+
+reviews
+  id PK, user_id FK, card_id FK, instance_id FK UNIQUE, session_id FK,
+  response JSONB, is_correct BOOL, rating SMALLINT(1–4),
+  latency_ms INT, counted_for_srs BOOL,
+  state_before JSONB, state_after JSONB,     -- FSRS snapshots, allows optimiser + undo
+  created_at
+  INDEX(user_id, created_at), INDEX(card_id, created_at)
+```
+
+Content (packs/decks/cards) is **seeded idempotently** from `app/content/` via upsert on slug (`make seed`), so content lives in git, not hand-edited in the DB.
+
+---
+
+## 6. REST API (`/api/v1`)
+
+Conventions: plain resources (no success envelope); errors are `{"error": {"code", "message", "details"}}`; cursor pagination `{"items": [...], "next_cursor"}` only on history endpoints; timestamps ISO-8601 UTC.
+
+| Method | Path | Returns |
+|---|---|---|
+| GET | `/health` | `{status, db}` |
+| GET | `/packs` | `PackOut[]` |
+| GET | `/packs/{slug}` | `PackDetailOut` (with decks) |
+| GET | `/decks/{id}` | `DeckOut` |
+| POST | `/sessions` | `SessionOut`. Body: `{mode, deck_ids?, new_limit?}` |
+| POST | `/sessions/{id}/next` | `ProblemOut`, or `204` when queue empty |
+| POST | `/instances/{id}/answer` | `GradeOut`. Body: `AnswerIn` |
+| POST | `/sessions/{id}/end` | `SessionSummaryOut` |
+| GET | `/stats/overview` | `StatsOverviewOut` |
+| GET | `/stats/decks/{id}` | `DeckStatsOut` |
+| GET | `/reviews?cursor=` | `Page[ReviewOut]` |
+| POST | `/instances/{id}/tutor` | `TutorOut` (LLM, M2) |
+
+`next` is a POST because it creates an instance.
+
+### Response models (Pydantic)
+```python
+from datetime import datetime
+from typing import Annotated, Literal
+from uuid import UUID
+from pydantic import BaseModel, Field
+
+Rating = Literal["again", "hard", "good", "easy"]
+Mode = Literal["review", "drill", "learn"]
+Action = Literal["fold", "call", "raise"]
+
+class DeckOut(BaseModel):
+    id: UUID
+    slug: str
+    name: str
+    description: str
+    tier: int
+    card_count: int
+    due_count: int
+    new_count: int
+    mastery: float  # 0–1, share of cards in review state with stability > threshold
+
+class PackOut(BaseModel):
+    id: UUID
+    slug: str
+    name: str
+    description: str
+    deck_count: int
+
+class PackDetailOut(PackOut):
+    decks: list[DeckOut]
+
+class SessionOut(BaseModel):
+    id: UUID
+    mode: Mode
+    deck_ids: list[UUID]
+    started_at: datetime
+    due_count: int
+    new_count: int
+
+# --- Problems: discriminated on answer_type ---
+class Scene(BaseModel):
+    hero: list[str] = []          # ["Ah", "Kd"]
+    board: list[str] = []         # ["Qs", "Jh", "2c"]
+    pot: float | None = None
+    bet: float | None = None
+    hero_stack: float | None = None
+    villain_stack: float | None = None
+    street: Literal["preflop", "flop", "turn", "river"] | None = None
+
+class ProblemBase(BaseModel):
+    instance_id: UUID
+    card_id: UUID
+    deck_slug: str
+    prompt: str                   # short markdown question
+    scene: Scene | None = None    # rendered visually when present
+    target_ms: int
+    is_new: bool
+
+class Bucket(BaseModel):
+    id: int                       # 0–4
+    label: str                    # "30–35%"
+    lo: float
+    hi: float
+
+class Choice(BaseModel):
+    id: int
+    label: str
+
+class BucketProblem(ProblemBase):
+    answer_type: Literal["bucket"]
+    unit: Literal["percent", "count", "ratio", "chips"]
+    buckets: list[Bucket] = Field(min_length=5, max_length=5)
+
+class ChoiceProblem(ProblemBase):
+    answer_type: Literal["choice"]
+    choices: list[Choice]
+
+class ActionProblem(ProblemBase):
+    answer_type: Literal["action"]
+    actions: list[Action]
+
+class FlipProblem(ProblemBase):
+    answer_type: Literal["flip"]
+
+ProblemOut = Annotated[
+    BucketProblem | ChoiceProblem | ActionProblem | FlipProblem,
+    Field(discriminator="answer_type"),
+]
+
+# --- Answering ---
+class AnswerIn(BaseModel):
+    response: int | Action | None = None  # bucket/choice id, action; None for flip
+    self_rating: Rating | None = None      # flip only
+    latency_ms: int = Field(ge=0)
+
+class GradeOut(BaseModel):
+    instance_id: UUID
+    is_correct: bool | None               # None for flip
+    rating: Rating
+    correct_response: int | Action | None
+    exact_answer: float | str | None      # e.g. 31.8 (shown alongside bucket)
+    back_md: str | None                   # flip cards
+    shortcut: str
+    explanation_md: str
+    latency_ms: int
+    target_ms: int
+    next_due: datetime | None             # None in drill mode
+
+# --- Stats ---
+class DeckStat(BaseModel):
+    deck_id: UUID
+    deck_name: str
+    reviews: int
+    accuracy: float
+    median_latency_ms: int
+
+class SessionSummaryOut(BaseModel):
+    session_id: UUID
+    reviewed: int
+    correct: int
+    accuracy: float
+    median_latency_ms: int
+    by_deck: list[DeckStat]
+
+class StatsOverviewOut(BaseModel):
+    streak_days: int
+    reviews_today: int
+    due_now: int
+    accuracy_7d: float
+    median_latency_ms_7d: int
+    weakest: list[DeckStat]               # feeds Drill suggestions
+
+class TutorOut(BaseModel):
+    message_md: str
+```
+
+---
+
+## 7. Poker Math Pack (v1 content)
+
+### Tier 1: Foundations
+1. **Outs counting**: hero + board → clean outs (FD, OESD, gutshot, overcards, combo draws, dirty outs).
+2. **Outs → equity**: rule of 2 and 4 (with the big-draw correction) vs. exact.
+3. **Pot odds**: pot + bet → required equity, `call / (pot + bet + call)`.
+4. **Ratio ↔ percentage**: 3:1 ↔ 25% (speed drill).
+5. **Call/fold**: draw + pot odds → action.
+
+### Tier 2: Betting math
+6. **Bluff breakeven**: `B / (P + B)`.
+7. **MDF**: `P / (P + B)`.
+8. **Implied odds**: extra needed on later streets.
+9. **Reverse implied odds**.
+10. **SPR**: compute + classify.
+11. **Geometric sizing**: per-street size to get stacks in by the river.
 12. **Semi-bluff EV**: fold equity + equity when called.
 
-### Tier 3 — Combinatorics & ranges
-13. **Hand combos**: pairs (6), suited (4), offsuit (12), and with card removal.
-14. **Blockers**: combos remaining given board/hero cards.
-15. **Range composition**: value:bluff ratio in a given range.
-16. **Preflop matchups**: memorise common equities (pair vs. overcards ≈ 55/45, dominated hands ≈ 70/30, etc.).
-17. **Hand vs. range equity estimation** (v2, heavier compute).
+### Tier 3: Combinatorics & ranges
+13. **Hand combos**: 6 / 4 / 12, with card removal.
+14. **Blockers**: remaining combos given board/hero.
+15. **Value:bluff ratios**.
+16. **Preflop matchups**: canonical equities.
+17. **Hand vs. range equity** (v2).
 
-### Tier 4 — EV & advanced (v2+)
-18. **EV calculations**: full EV of a call/bet with multiple outcomes.
-19. **Bet-to-value ratios / polarised river sizing**.
-20. **ICM basics**: tournament chip vs. $ value.
-21. **Variance / bankroll**: standard deviation, risk of ruin (conceptual).
-
-Each generator specifies: inputs, answer formula, tolerance, target time, explanation template, and difficulty knobs (e.g. round numbers → awkward numbers, single draw → combo draw).
+### Tier 4 (v2+)
+18. Multi-outcome EV · 19. Polarised river sizing · 20. Variance / bankroll.
 
 ---
 
-## 5. UI (mobile-first)
-
-- **Home**: due count, streak, "Review" / "Drill" buttons, weakest skills.
-- **Card screen**: rendered cards and board (visual, not "Ah Kd" text), pot/bet chips, numeric keypad for answers, visible timer.
-- **Result**: correct answer, your error, time, one-line shortcut, "Explain" expansion.
-- **Deck browser** and **stats** screens.
-- Dark mode default (it's a poker app).
+## 8. UI (mobile-first)
+- **Home**: due count, streak, Review / Drill, weakest decks.
+- **Card**: rendered cards + board, pot/bet chips, **5 large bucket buttons** (thumb-reachable), timer bar against target.
+- **Result**: correct bucket highlighted, exact value, time, shortcut, expandable explanation, "Explain differently" (tutor).
+- **Decks**, **Stats**.
+- Dark mode default.
 
 ---
 
-## 6. Milestones
+## 9. Milestones
 
 | Milestone | Scope |
 |---|---|
-| **M0: Skeleton** | Vite/React/TS PWA, Dexie schema, FSRS wired, static `flip` cards working end-to-end. |
-| **M1: Generators** | Generator card type, `numeric` grading with tolerance + latency, Tier 1 poker decks. |
-| **M2: Betting math** | Tier 2 decks, Drill mode, Explain view, basic stats. |
-| **M3: Combinatorics** | Tier 3 decks, card-removal engine, calibration chart. |
-| **M4: Generic learning** | YAML/CSV/Anki import, user-created decks. |
-| **v2** | Sync, range-grid answers, hand-vs-range equity, Tier 4. |
+| **M0: Infra** | Compose (db/api/web), Makefile, Alembic baseline, health check, OpenAPI → RTK Query codegen, CI. |
+| **M1: Engine** | Models, seeding, FSRS, sessions, static `flip` cards end-to-end. |
+| **M2: Generators** | Generator registry, `bucket` grading, Tier 1 decks, result/explain screen, tutor chain. |
+| **M3: Betting math** | Tier 2, Drill mode, stats. |
+| **M4: Combinatorics + generic** | Tier 3, card-removal engine, LLM deck builder, CSV import. |
+| **v2** | Auth, prod deploy, PWA/offline, hand-vs-range, Tier 4. |
 
 ---
 
-## 7. Open Questions
-
-1. Phone-first PWA OK, or do you want a native app from day one?
-2. Single user (you) for now, or plan for multiple users / ReportNote-style SaaS later? (Affects whether we design for auth/sync early.)
-3. Game focus: NLHE cash only, or include tournaments (ICM) and PLO?
-4. Should Drill mode results feed FSRS, or stay separate?
-5. Answer input for equity: type a number, or tap a slider/bucket (faster, coarser)?
+## 10. Open Questions
+1. Where does prod run (VPS, Fly, Railway)? This affects TLS and whether nginx terminates SSL.
+2. LLM provider for the tutor: Anthropic by default?
+3. Daily new-card limit default (proposal: 10).
