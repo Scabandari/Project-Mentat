@@ -67,7 +67,7 @@ jobs:
       - name: Prod stack smoke test
         run: |
           docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build --wait
-          curl -fsS http://localhost/api/v1/health
-          curl -fsS http://localhost/ | grep -q '<title>Mentat</title>'
+          curl -fsS http://localhost:8473/api/v1/health
+          curl -fsS http://localhost:8473/ | grep -q '<title>Mentat</title>'
       - if: failure()
         run: docker compose -f docker-compose.yml -f docker-compose.prod.yml logs

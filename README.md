@@ -42,7 +42,7 @@ make psql                     # DB shell
 ## Production (self-hosted)
 
 ```bash
-make prod-up      # db + api + nginx on http://localhost (port 80)
+make prod-up      # db + api + nginx on http://localhost:8473
 make backup       # pg_dump to ./backups (14-day retention), cron this nightly
 make restore f=backups/mentat-YYYYMMDD-HHMMSS.dump
 ```
