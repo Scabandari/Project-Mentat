@@ -24,6 +24,7 @@
 | Users | Single user in v1. **Every user-owned row has `user_id`** (one seeded default user), so adding logins later is additive, not a migration nightmare. |
 | Answer input | 5 buckets by default; `choice`, `action`, `flip` also supported. |
 | Offline | Not in v1. PWA shell + offline queue can come later. |
+| Hosting | Self-hosted on Ryan's home server via `make prod-up`. v1 served on `http://localhost` (nginx :80). Subdomain + TLS is a follow-up (see §3 Infra). |
 
 ---
 
@@ -61,7 +62,9 @@
 |---|---|
 | Orchestration | **Docker Compose**: `docker-compose.yml` (dev) + `docker-compose.prod.yml` (override) |
 | Dev | `db`, `api` (uvicorn `--reload`, source mounted), `web` (Vite dev server, proxies `/api` → `api`) |
-| Prod | `db`, `api` (uvicorn workers), `nginx` (serves built SPA, proxies `/api`, gzip, cache headers) |
+| Prod | `db`, `api` (uvicorn workers), `nginx` (serves built SPA, proxies `/api`, gzip, cache headers). Runs on the home server, bound to `localhost:80`; Postgres not exposed outside the compose network. `restart: unless-stopped` on all services. |
+| Public access (follow-up) | **Cloudflare Tunnel** (`cloudflared` service in prod compose) → subdomain. No port forwarding, no exposed home IP, TLS handled by Cloudflare. Alternative: Caddy with auto Let's Encrypt + router port-forward. Auth must ship before exposing publicly. |
+| Backups | Nightly `pg_dump` to a mounted host dir (`make backup` / `make restore f=`), keep 14 days. |
 | Config | `.env` (gitignored) + `.env.example` |
 | Tasks | **Makefile** (`make help`) |
 | CI | GitHub Actions: `make check` (lint, typecheck, test) on PR |
@@ -411,11 +414,10 @@ class TutorOut(BaseModel):
 | **M2: Generators** | Generator registry, `bucket` grading, Tier 1 decks, result/explain screen, tutor chain. |
 | **M3: Betting math** | Tier 2, Drill mode, stats. |
 | **M4: Combinatorics + generic** | Tier 3, card-removal engine, LLM deck builder, CSV import. |
-| **v2** | Auth, prod deploy, PWA/offline, hand-vs-range, Tier 4. |
+| **v2** | Auth → subdomain via Cloudflare Tunnel, PWA/offline, hand-vs-range, Tier 4. |
 
 ---
 
 ## 10. Open Questions
-1. Where does prod run (VPS, Fly, Railway)? This affects TLS and whether nginx terminates SSL.
-2. LLM provider for the tutor: Anthropic by default?
-3. Daily new-card limit default (proposal: 10).
+1. LLM provider for the tutor: Anthropic by default?
+2. Daily new-card limit default (proposal: 10).

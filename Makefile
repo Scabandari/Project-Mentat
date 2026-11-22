@@ -8,7 +8,7 @@ DB_USER      ?= mentat
 DB_NAME      ?= mentat
 
 .PHONY: help setup up down restart build ps logs prod-up prod-down prod-logs \
-        migrate migration downgrade seed psql db-reset \
+        migrate migration downgrade seed psql db-reset backup restore \
         test test-api test-web lint fmt typecheck check gen-api \
         shell-api shell-web clean
 
@@ -73,6 +73,15 @@ db-reset: ## Destroy DB volume, then migrate + seed
 	$(COMPOSE) down -v
 	$(COMPOSE) up -d --build --wait
 	$(MAKE) migrate seed
+
+backup: ## pg_dump to ./backups (prod stack), keep 14 days
+	@mkdir -p backups
+	$(COMPOSE_PROD) exec -T db pg_dump -U $(DB_USER) -d $(DB_NAME) -Fc > backups/mentat-$$(date +%Y%m%d-%H%M%S).dump
+	find backups -name 'mentat-*.dump' -mtime +14 -delete
+
+restore: ## Restore a dump into prod DB: make restore f=backups/x.dump
+	@test -n "$(f)" || (echo 'usage: make restore f=backups/file.dump'; exit 1)
+	$(COMPOSE_PROD) exec -T db pg_restore -U $(DB_USER) -d $(DB_NAME) --clean --if-exists < $(f)
 
 # ---------- Quality ----------
 test: test-api test-web ## Run all tests
